@@ -32,6 +32,21 @@ namespace Apocarrot.Arena
             BuildArenaEnvironment();
         }
 
+        private void Update()
+        {
+            if (UnityEngine.InputSystem.Keyboard.current != null)
+            {
+                if (UnityEngine.InputSystem.Keyboard.current.bKey.wasPressedThisFrame ||
+                    UnityEngine.InputSystem.Keyboard.current.iKey.wasPressedThisFrame)
+                {
+                    if (EquipmentBagUI.Instance != null)
+                    {
+                        EquipmentBagUI.Instance.ToggleBag();
+                    }
+                }
+            }
+        }
+
         public void BuildGate2Environment() => BuildArenaEnvironment();
         public void BuildGate3Environment() => BuildArenaEnvironment();
         public void BuildGate4Environment() => BuildArenaEnvironment();
@@ -465,24 +480,43 @@ namespace Apocarrot.Arena
                 backpackTexts[i] = bpText;
             }
 
-            RunInventoryHUD invHUD = invPanel.AddComponent<RunInventoryHUD>();
-            invHUD.Bind(runInventory, goldText, meleeSlotText, rangedSlotText, backpackTexts, backpackBgs);
+            // Banner thông báo nhặt đồ mới nổi bật
+            GameObject bannerObj = new GameObject("Loot_Notification_Banner");
+            bannerObj.transform.SetParent(invPanel.transform, false);
+            RectTransform bannerRect = bannerObj.AddComponent<RectTransform>();
+            bannerRect.anchorMin = new Vector2(0, 0);
+            bannerRect.anchorMax = new Vector2(1, 0);
+            bannerRect.pivot = new Vector2(0.5f, 0);
+            bannerRect.anchoredPosition = new Vector2(0, 4);
+            bannerRect.sizeDelta = new Vector2(0, 24);
 
-            // 3. Hướng dẫn phím ở góc trên bên phải
+            Text bannerText = bannerObj.AddComponent<Text>();
+            bannerText.font = defaultFont;
+            bannerText.fontSize = 13;
+            bannerText.fontStyle = FontStyle.Bold;
+            bannerText.alignment = TextAnchor.MiddleCenter;
+            bannerText.color = Color.yellow;
+            bannerText.text = "";
+            bannerObj.SetActive(false);
+
+            RunInventoryHUD invHUD = invPanel.AddComponent<RunInventoryHUD>();
+            invHUD.Bind(runInventory, goldText, meleeSlotText, rangedSlotText, backpackTexts, backpackBgs, bannerText);
+
+            // 3. Hướng dẫn phím ở góc trên bên trái (dưới thanh Máu, không đè lên Hồ sơ tài khoản & nút Balo)
             GameObject hintObj = new GameObject("Controls_Hint");
             hintObj.transform.SetParent(canvasObj.transform, false);
             Text hintText = hintObj.AddComponent<Text>();
             hintText.font = defaultFont;
-            hintText.fontSize = 15;
-            hintText.alignment = TextAnchor.UpperRight;
+            hintText.fontSize = 13;
+            hintText.alignment = TextAnchor.UpperLeft;
             hintText.color = new Color(1f, 1f, 1f, 0.85f);
-            hintText.text = "Di chuyển: WASD / Joystick\nCận chiến: Space / J / Phím đỏ\nTầm xa: TỰ ĐỘNG BẮN quái gần nhất\n🎒 Balo trang bị & Ghép đồ: Phím B hoặc Nút xanh bên phải";
+            hintText.text = "⌨️ WASD/Joystick: Di chuyển  |  ⚔️ Space/J: Cận chiến\n🏹 Tầm xa: Tự ngắm & bắn  |  🎒 Phím [B]: Mở Balo & Ghép đồ";
             RectTransform hintRect = hintObj.GetComponent<RectTransform>();
-            hintRect.anchorMin = new Vector2(1, 1);
-            hintRect.anchorMax = new Vector2(1, 1);
-            hintRect.pivot = new Vector2(1, 1);
-            hintRect.anchoredPosition = new Vector2(-30, -30);
-            hintRect.sizeDelta = new Vector2(480, 85);
+            hintRect.anchorMin = new Vector2(0, 1);
+            hintRect.anchorMax = new Vector2(0, 1);
+            hintRect.pivot = new Vector2(0, 1);
+            hintRect.anchoredPosition = new Vector2(30, -150);
+            hintRect.sizeDelta = new Vector2(460, 48);
 
             // 3. Joystick Ảo góc dưới bên trái
             GameObject joystickObj = new GameObject("VirtualJoystick");

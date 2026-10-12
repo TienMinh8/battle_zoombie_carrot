@@ -89,7 +89,20 @@ namespace Apocarrot.UI
         [SerializeField] private Button autoFuseButton;
         [SerializeField] private Button closeFuseButton;
 
-        private Font uiFont;
+        [SerializeField] private Font uiFont;
+        public Font UIFont
+        {
+            get
+            {
+                if (uiFont == null)
+                {
+                    uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+                }
+                return uiFont;
+            }
+            set => uiFont = value;
+        }
+
         private EquipmentItem selectedItem;
         private bool isSelectedEquipped = false;
         private EquipmentSlotType selectedSlotType;
@@ -99,6 +112,7 @@ namespace Apocarrot.UI
         private bool isIntermissionActive = false;
         private int currentIntermissionWave = 1;
         private bool isShopTabActive = false;
+        private bool isDirty = false;
 
         public bool IsOpen => bagRoot != null && bagRoot.activeSelf;
 
@@ -113,11 +127,19 @@ namespace Apocarrot.UI
                 Destroy(gameObject);
                 return;
             }
+
+            if (uiFont == null)
+            {
+                uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            }
         }
 
         private void Start()
         {
-            uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            if (uiFont == null)
+            {
+                uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            }
             HookEvents();
             RefreshAll();
 
@@ -171,7 +193,7 @@ namespace Apocarrot.UI
 
             if (AccountProgression.Instance != null)
             {
-                AccountProgression.Instance.OnAccountDataChanged += RefreshAll;
+                AccountProgression.Instance.OnAccountDataChanged += HandleAccountDataChanged;
             }
         }
 
@@ -179,7 +201,19 @@ namespace Apocarrot.UI
         {
             if (AccountProgression.Instance != null)
             {
-                AccountProgression.Instance.OnAccountDataChanged -= RefreshAll;
+                AccountProgression.Instance.OnAccountDataChanged -= HandleAccountDataChanged;
+            }
+        }
+
+        private void HandleAccountDataChanged()
+        {
+            if (IsOpen)
+            {
+                RefreshAll();
+            }
+            else
+            {
+                isDirty = true;
             }
         }
 
@@ -191,6 +225,7 @@ namespace Apocarrot.UI
                 bagRoot.SetActive(true);
                 SwitchTab(false);
                 RefreshAll();
+                isDirty = false;
             }
         }
 
@@ -205,6 +240,7 @@ namespace Apocarrot.UI
                 // Mặc định ở giữa wave thì mở tab Balo để xem đồ nhặt được và ghép đồ
                 SwitchTab(false);
                 RefreshAll();
+                isDirty = false;
             }
         }
 
@@ -407,16 +443,101 @@ namespace Apocarrot.UI
             if (bagGridContainer == null) return;
             Transform gridContent = bagGridContainer.transform.Find("Viewport/GridContent") ?? bagGridContainer.transform;
 
-            for (int i = gridContent.childCount - 1; i >= 0; i--)
+            if (items == null || items.Count == 0)
             {
-                Destroy(gridContent.GetChild(i).gameObject);
+                for (int i = 0; i < gridContent.childCount; i++)
+                {
+                    gridContent.GetChild(i).gameObject.SetActive(false);
+                }
+                return;
             }
 
-            if (items == null || items.Count == 0) return;
-
-            foreach (var item in items)
+            int count = items.Count;
+            for (int i = 0; i < count; i++)
             {
-                CreateBagItemCard(gridContent, item);
+                var item = items[i];
+                if (i < gridContent.childCount)
+                {
+                    UpdateBagItemCard(gridContent.GetChild(i), item);
+                }
+                else
+                {
+                    CreateBagItemCard(gridContent, item);
+                }
+            }
+
+            for (int i = count; i < gridContent.childCount; i++)
+            {
+                gridContent.GetChild(i).gameObject.SetActive(false);
+            }
+        }
+
+        private void UpdateBagItemCard(Transform cardTr, EquipmentItem item)
+        {
+            cardTr.gameObject.SetActive(true);
+            cardTr.name = $"Item_{item.Uid}";
+
+            Image bg = cardTr.GetComponent<Image>();
+            if (bg != null) bg.color = item.GetRarityColor();
+
+            Transform badgeTr = cardTr.Find("TypeBadge");
+            if (badgeTr != null)
+            {
+                Text bTxt = badgeTr.GetComponent<Text>();
+                if (bTxt != null)
+                {
+                    bTxt.font = UIFont;
+                    bTxt.text = $"[{item.GetSlotIcon()}]";
+                    bTxt.color = item.GetRarityColor();
+                }
+            }
+
+            Transform lvlTr = cardTr.Find("LvlText");
+            if (lvlTr != null)
+            {
+                Text lTxt = lvlTr.GetComponent<Text>();
+                if (lTxt != null)
+                {
+                    lTxt.font = UIFont;
+                    lTxt.text = $"Lv.{item.Level}";
+                }
+            }
+
+            Transform iconTr = cardTr.Find("Icon");
+            if (iconTr != null)
+            {
+                Text iTxt = iconTr.GetComponent<Text>();
+                if (iTxt != null)
+                {
+                    iTxt.font = UIFont;
+                    iTxt.text = $"<b>[{item.GetSlotIcon()}]</b>\n<size=11><color=#33ff77>{item.GetPrimaryStatText()}</color></size>";
+                }
+            }
+
+            Transform nameTr = cardTr.Find("Name");
+            if (nameTr != null)
+            {
+                Text nTxt = nameTr.GetComponent<Text>();
+                if (nTxt != null)
+                {
+                    nTxt.font = UIFont;
+                    nTxt.text = item.DisplayName;
+                    nTxt.color = item.GetRarityColor();
+                }
+            }
+
+            Transform newBadgeTr = cardTr.Find("New_Badge");
+            bool isNew = recentlyCollectedUids.Contains(item.Uid);
+            if (newBadgeTr != null)
+            {
+                newBadgeTr.gameObject.SetActive(isNew);
+            }
+
+            Button cardBtn = cardTr.GetComponent<Button>();
+            if (cardBtn != null)
+            {
+                cardBtn.onClick.RemoveAllListeners();
+                cardBtn.onClick.AddListener(() => OpenBagItemDetail(item));
             }
         }
 
@@ -450,7 +571,7 @@ namespace Apocarrot.UI
             bRt.anchoredPosition = new Vector2(6, -6);
             bRt.sizeDelta = new Vector2(50, 18);
             Text bTxt = badgeObj.AddComponent<Text>();
-            bTxt.font = uiFont;
+            bTxt.font = UIFont;
             bTxt.fontSize = 10;
             bTxt.fontStyle = FontStyle.Bold;
             bTxt.text = $"[{item.GetSlotIcon()}]";
@@ -467,7 +588,7 @@ namespace Apocarrot.UI
             lRt.anchoredPosition = new Vector2(-6, -6);
             lRt.sizeDelta = new Vector2(50, 18);
             Text lTxt = lvlObj.AddComponent<Text>();
-            lTxt.font = uiFont;
+            lTxt.font = UIFont;
             lTxt.fontSize = 11;
             lTxt.fontStyle = FontStyle.Bold;
             lTxt.alignment = TextAnchor.MiddleRight;
@@ -481,7 +602,7 @@ namespace Apocarrot.UI
             iRt.anchoredPosition = new Vector2(0, 6);
             iRt.sizeDelta = new Vector2(104, 48);
             Text iTxt = iconObj.AddComponent<Text>();
-            iTxt.font = uiFont;
+            iTxt.font = UIFont;
             iTxt.fontSize = 13;
             iTxt.fontStyle = FontStyle.Bold;
             iTxt.alignment = TextAnchor.MiddleCenter;
@@ -498,7 +619,7 @@ namespace Apocarrot.UI
             nRt.anchoredPosition = new Vector2(0, 5);
             nRt.sizeDelta = new Vector2(0, 24);
             Text nTxt = nameObj.AddComponent<Text>();
-            nTxt.font = uiFont;
+            nTxt.font = UIFont;
             nTxt.fontSize = 10;
             nTxt.fontStyle = FontStyle.Bold;
             nTxt.alignment = TextAnchor.MiddleCenter;
@@ -507,34 +628,32 @@ namespace Apocarrot.UI
 
             // Huy hiệu MỚI (NEW Badge) nếu vừa mới nhặt được từ quái
             bool isNew = recentlyCollectedUids.Contains(item.Uid);
-            if (isNew)
-            {
-                GameObject newBadgeObj = new GameObject("New_Badge");
-                newBadgeObj.transform.SetParent(cardObj.transform, false);
-                RectTransform nbRt = newBadgeObj.AddComponent<RectTransform>();
-                nbRt.anchorMin = new Vector2(0.5f, 1f);
-                nbRt.anchorMax = new Vector2(0.5f, 1f);
-                nbRt.pivot = new Vector2(0.5f, 0.5f);
-                nbRt.anchoredPosition = new Vector2(0, 2);
-                nbRt.sizeDelta = new Vector2(66, 20);
+            GameObject newBadgeObj = new GameObject("New_Badge");
+            newBadgeObj.transform.SetParent(cardObj.transform, false);
+            RectTransform nbRt = newBadgeObj.AddComponent<RectTransform>();
+            nbRt.anchorMin = new Vector2(0.5f, 1f);
+            nbRt.anchorMax = new Vector2(0.5f, 1f);
+            nbRt.pivot = new Vector2(0.5f, 0.5f);
+            nbRt.anchoredPosition = new Vector2(0, 2);
+            nbRt.sizeDelta = new Vector2(66, 20);
 
-                Image nbBg = newBadgeObj.AddComponent<Image>();
-                nbBg.color = new Color(0.95f, 0.2f, 0.15f, 0.95f);
+            Image nbBg = newBadgeObj.AddComponent<Image>();
+            nbBg.color = new Color(0.95f, 0.2f, 0.15f, 0.95f);
 
-                GameObject nbTextObj = new GameObject("Text");
-                nbTextObj.transform.SetParent(newBadgeObj.transform, false);
-                RectTransform nbtRt = nbTextObj.AddComponent<RectTransform>();
-                nbtRt.anchorMin = Vector2.zero;
-                nbtRt.anchorMax = Vector2.one;
-                nbtRt.sizeDelta = Vector2.zero;
-                Text nbTxt = nbTextObj.AddComponent<Text>();
-                nbTxt.font = uiFont;
-                nbTxt.fontSize = 11;
-                nbTxt.fontStyle = FontStyle.Bold;
-                nbTxt.alignment = TextAnchor.MiddleCenter;
-                nbTxt.color = Color.yellow;
-                nbTxt.text = "✦ MỚI ✦";
-            }
+            GameObject nbTextObj = new GameObject("Text");
+            nbTextObj.transform.SetParent(newBadgeObj.transform, false);
+            RectTransform nbtRt = nbTextObj.AddComponent<RectTransform>();
+            nbtRt.anchorMin = Vector2.zero;
+            nbtRt.anchorMax = Vector2.one;
+            nbtRt.sizeDelta = Vector2.zero;
+            Text nbTxt = nbTextObj.AddComponent<Text>();
+            nbTxt.font = UIFont;
+            nbTxt.fontSize = 11;
+            nbTxt.fontStyle = FontStyle.Bold;
+            nbTxt.alignment = TextAnchor.MiddleCenter;
+            nbTxt.color = Color.yellow;
+            nbTxt.text = "✦ MỚI ✦";
+            newBadgeObj.SetActive(isNew);
 
             Button cardBtn = cardObj.AddComponent<Button>();
             cardBtn.onClick.AddListener(() => OpenBagItemDetail(item));
@@ -545,17 +664,80 @@ namespace Apocarrot.UI
             if (shopListContainer == null) return;
             Transform shopContent = shopListContainer.transform.Find("Viewport/ShopContent") ?? shopListContainer.transform;
 
-            for (int i = shopContent.childCount - 1; i >= 0; i--)
-            {
-                Destroy(shopContent.GetChild(i).gameObject);
-            }
-
             var stock = ShopItemData.GetDefaultStock();
             int currentRunGold = RunInventory.Instance != null ? RunInventory.Instance.RunGold : 0;
 
-            foreach (var item in stock)
+            for (int i = 0; i < stock.Length; i++)
             {
-                CreateShopItemCard(shopContent, item, currentRunGold);
+                var item = stock[i];
+                if (i < shopContent.childCount)
+                {
+                    UpdateShopItemCard(shopContent.GetChild(i), item, currentRunGold);
+                }
+                else
+                {
+                    CreateShopItemCard(shopContent, item, currentRunGold);
+                }
+            }
+
+            for (int i = stock.Length; i < shopContent.childCount; i++)
+            {
+                shopContent.GetChild(i).gameObject.SetActive(false);
+            }
+        }
+
+        private void UpdateShopItemCard(Transform cardTr, ShopItemData data, int currentRunGold)
+        {
+            cardTr.gameObject.SetActive(true);
+            cardTr.name = $"ShopItem_{data.ItemId}";
+
+            Transform iconTr = cardTr.Find("Icon");
+            if (iconTr != null)
+            {
+                Text iTxt = iconTr.GetComponent<Text>();
+                if (iTxt != null)
+                {
+                    iTxt.font = UIFont;
+                    iTxt.text = data.ItemType == ShopItemType.Heal ? "❤️" : "🗡️";
+                }
+            }
+
+            Transform infoTr = cardTr.Find("Info");
+            if (infoTr != null)
+            {
+                Text inTxt = infoTr.GetComponent<Text>();
+                if (inTxt != null)
+                {
+                    inTxt.font = UIFont;
+                    inTxt.text = $"<b>{data.Title}</b>\n<color=#aaaaaa>{data.Description}</color>";
+                }
+            }
+
+            bool canAfford = currentRunGold >= data.Price;
+            Transform buyBtnTr = cardTr.Find("BuyButton");
+            if (buyBtnTr != null)
+            {
+                Image bImg = buyBtnTr.GetComponent<Image>();
+                if (bImg != null) bImg.color = canAfford ? new Color(0.2f, 0.75f, 0.35f) : new Color(0.35f, 0.35f, 0.4f);
+
+                Transform bTxtTr = buyBtnTr.Find("Text");
+                if (bTxtTr != null)
+                {
+                    Text bTxt = bTxtTr.GetComponent<Text>();
+                    if (bTxt != null)
+                    {
+                        bTxt.font = UIFont;
+                        bTxt.text = canAfford ? $"MUA {data.Price}💰" : $"THIẾU {data.Price}💰";
+                    }
+                }
+
+                Button bBtn = buyBtnTr.GetComponent<Button>();
+                if (bBtn != null)
+                {
+                    bBtn.interactable = canAfford;
+                    bBtn.onClick.RemoveAllListeners();
+                    bBtn.onClick.AddListener(() => HandleBuyShopItem(data));
+                }
             }
         }
 
@@ -580,7 +762,7 @@ namespace Apocarrot.UI
             iRt.anchoredPosition = new Vector2(16, 0);
             iRt.sizeDelta = new Vector2(48, 48);
             Text iTxt = iconObj.AddComponent<Text>();
-            iTxt.font = uiFont;
+            iTxt.font = UIFont;
             iTxt.fontSize = 28;
             iTxt.alignment = TextAnchor.MiddleCenter;
             iTxt.text = data.ItemType == ShopItemType.Heal ? "❤️" : "🗡️";
@@ -594,7 +776,7 @@ namespace Apocarrot.UI
             inRt.offsetMin = new Vector2(75, 8);
             inRt.offsetMax = new Vector2(-150, -8);
             Text inTxt = infoObj.AddComponent<Text>();
-            inTxt.font = uiFont;
+            inTxt.font = UIFont;
             inTxt.fontSize = 14;
             inTxt.alignment = TextAnchor.MiddleLeft;
             inTxt.color = Color.white;
@@ -612,6 +794,7 @@ namespace Apocarrot.UI
             bRt.sizeDelta = new Vector2(120, 44);
 
             Image bImg = buyBtnObj.AddComponent<Image>();
+            bImg.color = canAfford ? new Color(0.2f, 0.75f, 0.35f) : new Color(0.35f, 0.35f, 0.4f);
             bImg.color = canAfford ? new Color(0.2f, 0.75f, 0.35f) : new Color(0.35f, 0.35f, 0.4f);
 
             GameObject bTxtObj = new GameObject("Text");
@@ -1054,6 +1237,7 @@ namespace Apocarrot.UI
             // Binding
             EquipmentBagUI ui = bagRootObj.AddComponent<EquipmentBagUI>();
             ui.bagRoot = bagRootObj;
+            ui.uiFont = defaultFont ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
             ui.levelText = lvlTxt;
             ui.energyText = energyTxt;
             ui.goldText = goldTxt;
