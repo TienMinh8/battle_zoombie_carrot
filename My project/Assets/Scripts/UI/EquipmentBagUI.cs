@@ -50,13 +50,15 @@ namespace Apocarrot.UI
         [SerializeField] private Text totalHpText;
         [SerializeField] private Button rotateHeroButton;
 
-        [Header("6 Equipped Slots")]
+        [Header("8 Equipped Slots (Cận Chiến, Tầm Xa, Giáp, Đồ Hỗ Trợ)")]
         [SerializeField] private Button weaponSlotBtn;
+        [SerializeField] private Button rangedSlotBtn;
         [SerializeField] private Button necklaceSlotBtn;
         [SerializeField] private Button glovesSlotBtn;
         [SerializeField] private Button armorSlotBtn;
         [SerializeField] private Button beltSlotBtn;
         [SerializeField] private Button bootsSlotBtn;
+        [SerializeField] private Button badgeSlotBtn;
 
         [Header("Mid Bar Tabs")]
         [SerializeField] private Button tabBagButton;
@@ -311,34 +313,36 @@ namespace Apocarrot.UI
             var acc = AccountProgression.Instance?.Data;
             if (acc == null) return;
 
-            // 1. Top Bar
-            if (levelText != null) levelText.text = $"{acc.RabbitLevel}";
-            if (goldText != null) goldText.text = $"{acc.PermanentGold}";
-            if (gemsText != null) gemsText.text = $"{acc.PermanentGems}";
-            if (energyText != null) energyText.text = acc.UnlimitedEnergyForTesting ? "20/20" : $"{acc.CurrentEnergy}/{acc.MaxEnergy}";
+            // 1. Top Bar - Rõ ràng, có biểu tượng và nhãn dễ hiểu
+            if (levelText != null) levelText.text = $"⭐ CẤP {acc.RabbitLevel}";
+            if (energyText != null) energyText.text = acc.UnlimitedEnergyForTesting ? "⚡ NL 20/20" : $"⚡ NL {acc.CurrentEnergy}/{acc.MaxEnergy}";
+            if (goldText != null) goldText.text = $"💰 VÀNG {acc.PermanentGold:N0}";
+            if (gemsText != null) gemsText.text = $"💎 GEM {acc.PermanentGems:N0}";
 
             int runGold = RunInventory.Instance != null ? RunInventory.Instance.RunGold : 0;
-            if (runGoldText != null) runGoldText.text = $"{runGold}";
+            if (runGoldText != null) runGoldText.text = $"🪙 RUN {runGold:N0}";
 
             // 2. Hero & Stats
             if (heroNameText != null)
             {
-                heroNameText.text = isIntermissionActive ? $"🎉 HOÀN THÀNH WAVE {currentIntermissionWave}! (TRẠM NGHỈ)" : acc.RabbitName;
+                heroNameText.text = isIntermissionActive ? $"🎉 HOÀN THÀNH WAVE {currentIntermissionWave}! (TRẠM NGHỈ)" : $"★ {acc.RabbitName} ★";
             }
 
             int totalAtk = 25 + acc.GetTotalEquipmentAttack();
             int totalHp = 100 + acc.GetTotalEquipmentHealth();
 
-            if (totalAtkText != null) totalAtkText.text = $"{totalAtk}";
-            if (totalHpText != null) totalHpText.text = $"{totalHp}";
+            if (totalAtkText != null) totalAtkText.text = $"⚔️ TỔNG CÔNG: {totalAtk}";
+            if (totalHpText != null) totalHpText.text = $"❤️ TỔNG MÁU: {totalHp}";
 
-            // 3. 6 Ô Trang Bị
+            // 3. 8 Ô Trang Bị
             UpdateSlotButton(weaponSlotBtn, acc.EquippedWeapon, EquipmentSlotType.Weapon);
+            UpdateSlotButton(rangedSlotBtn, acc.EquippedRangedWeapon, EquipmentSlotType.RangedWeapon);
             UpdateSlotButton(necklaceSlotBtn, acc.EquippedNecklace, EquipmentSlotType.Necklace);
             UpdateSlotButton(glovesSlotBtn, acc.EquippedGloves, EquipmentSlotType.Gloves);
             UpdateSlotButton(armorSlotBtn, acc.EquippedArmor, EquipmentSlotType.Armor);
             UpdateSlotButton(beltSlotBtn, acc.EquippedBelt, EquipmentSlotType.Belt);
             UpdateSlotButton(bootsSlotBtn, acc.EquippedBoots, EquipmentSlotType.Boots);
+            UpdateSlotButton(badgeSlotBtn, acc.EquippedBadge, EquipmentSlotType.Badge);
 
             // 4. Lưới Túi Đồ
             RefreshBagGrid(acc.OwnedEquipments);
@@ -473,12 +477,14 @@ namespace Apocarrot.UI
         {
             switch (slot)
             {
-                case EquipmentSlotType.Weapon: return "VŨ KHÍ";
+                case EquipmentSlotType.Weapon: return "CẬN CHIẾN";
+                case EquipmentSlotType.RangedWeapon: return "TẦM XA";
                 case EquipmentSlotType.Necklace: return "DÂY";
                 case EquipmentSlotType.Gloves: return "GĂNG";
                 case EquipmentSlotType.Armor: return "GIÁP";
                 case EquipmentSlotType.Belt: return "ĐAI";
                 case EquipmentSlotType.Boots: return "ỦNG";
+                case EquipmentSlotType.Badge: return "HUY HIỆU";
                 default: return "TRỐNG";
             }
         }
@@ -1264,14 +1270,14 @@ namespace Apocarrot.UI
             topRt.anchoredPosition = new Vector2(0, -10);
             topRt.sizeDelta = new Vector2(0, 54);
 
-            CreateResourcePill(topBar, new Vector2(-360, 0), new Vector2(130, 44), new Color(0.15f, 0.22f, 0.35f), "CẤP: 1", out Text lvlTxt, defaultFont);
-            CreateResourcePill(topBar, new Vector2(-200, 0), new Vector2(130, 44), new Color(0.12f, 0.35f, 0.22f), "NL: 20/20", out Text energyTxt, defaultFont);
-            CreateResourcePill(topBar, new Vector2(-40, 0), new Vector2(140, 44), new Color(0.35f, 0.28f, 0.08f), "TK: 150", out Text goldTxt, defaultFont);
-            CreateResourcePill(topBar, new Vector2(120, 0), new Vector2(130, 44), new Color(0.45f, 0.35f, 0.1f), "RUN: 0", out Text runGoldTxt, defaultFont);
-            CreateResourcePill(topBar, new Vector2(270, 0), new Vector2(120, 44), new Color(0.32f, 0.12f, 0.38f), "GEM: 50", out Text gemTxt, defaultFont);
-            GameObject closeBtnObj = CreateButton(topBar, new Vector2(430, 0), new Vector2(44, 44), new Color(0.85f, 0.2f, 0.25f), "✕", defaultFont, 22);
+            CreateResourcePill(topBar, new Vector2(-365, 0), new Vector2(135, 44), new Color(0.15f, 0.22f, 0.35f), "⭐ CẤP 1", out Text lvlTxt, defaultFont);
+            CreateResourcePill(topBar, new Vector2(-215, 0), new Vector2(145, 44), new Color(0.12f, 0.35f, 0.22f), "⚡ NL 20/20", out Text energyTxt, defaultFont);
+            CreateResourcePill(topBar, new Vector2(-60, 0), new Vector2(145, 44), new Color(0.35f, 0.28f, 0.08f), "💰 VÀNG 150", out Text goldTxt, defaultFont);
+            CreateResourcePill(topBar, new Vector2(95, 0), new Vector2(145, 44), new Color(0.45f, 0.35f, 0.1f), "🪙 RUN 0", out Text runGoldTxt, defaultFont);
+            CreateResourcePill(topBar, new Vector2(250, 0), new Vector2(145, 44), new Color(0.32f, 0.12f, 0.38f), "💎 GEM 50", out Text gemTxt, defaultFont);
+            GameObject closeBtnObj = CreateButton(topBar, new Vector2(420, 0), new Vector2(44, 44), new Color(0.85f, 0.2f, 0.25f), "✕", defaultFont, 22);
 
-            // ------------------ 2. HERO STAGE & 6 SLOTS ------------------
+            // ------------------ 2. HERO STAGE & 8 SLOTS ------------------
             GameObject heroSection = new GameObject("Hero_Section");
             heroSection.transform.SetParent(contentPanel.transform, false);
             RectTransform heroSecRt = heroSection.AddComponent<RectTransform>();
@@ -1352,19 +1358,23 @@ namespace Apocarrot.UI
             sbRt.anchorMax = new Vector2(0.5f, 1f);
             sbRt.pivot = new Vector2(0.5f, 1f);
             sbRt.anchoredPosition = new Vector2(0, -260);
-            sbRt.sizeDelta = new Vector2(360, 42);
+            sbRt.sizeDelta = new Vector2(440, 42);
 
-            CreateResourcePill(statBar, new Vector2(-95, 0), new Vector2(165, 38), new Color(0.22f, 0.14f, 0.14f), "ATK: 137", out Text atkTxt, defaultFont);
-            CreateResourcePill(statBar, new Vector2(95, 0), new Vector2(165, 38), new Color(0.12f, 0.24f, 0.14f), "HP: 1572", out Text hpTxt, defaultFont);
+            CreateResourcePill(statBar, new Vector2(-115, 0), new Vector2(210, 38), new Color(0.22f, 0.14f, 0.14f), "⚔️ CÔNG: 25", out Text atkTxt, defaultFont);
+            CreateResourcePill(statBar, new Vector2(115, 0), new Vector2(210, 38), new Color(0.12f, 0.24f, 0.14f), "❤️ MÁU: 100", out Text hpTxt, defaultFont);
 
-            // 6 Ô Trang Bị
-            Button wpnBtn = CreateEquipmentSlotUI(heroSection, new Vector2(-310, -15), "KIẾM", "Vũ Khí", defaultFont, EquipmentSlotType.Weapon);
-            Button neckBtn = CreateEquipmentSlotUI(heroSection, new Vector2(-310, -125), "DÂY", "Dây Chuyền", defaultFont, EquipmentSlotType.Necklace);
-            Button gloveBtn = CreateEquipmentSlotUI(heroSection, new Vector2(-310, -235), "GĂNG", "Găng Tay", defaultFont, EquipmentSlotType.Gloves);
+            // 8 Ô Trang Bị Chuẩn
+            // Cột bên trái: Công kích & Phụ trợ
+            Button wpnBtn = CreateEquipmentSlotUI(heroSection, new Vector2(-310, -10), "KIẾM", "Cận Chiến", defaultFont, EquipmentSlotType.Weapon);
+            Button rangedBtn = CreateEquipmentSlotUI(heroSection, new Vector2(-310, -104), "SÚNG", "Tầm Xa", defaultFont, EquipmentSlotType.RangedWeapon);
+            Button neckBtn = CreateEquipmentSlotUI(heroSection, new Vector2(-310, -198), "DÂY", "Dây Chuyền", defaultFont, EquipmentSlotType.Necklace);
+            Button gloveBtn = CreateEquipmentSlotUI(heroSection, new Vector2(-310, -292), "GĂNG", "Găng Tay", defaultFont, EquipmentSlotType.Gloves);
 
-            Button armBtn = CreateEquipmentSlotUI(heroSection, new Vector2(310, -15), "GIÁP", "Áo Giáp", defaultFont, EquipmentSlotType.Armor);
-            Button beltBtn = CreateEquipmentSlotUI(heroSection, new Vector2(310, -125), "ĐAI", "Thắt Lưng", defaultFont, EquipmentSlotType.Belt);
-            Button bootBtn = CreateEquipmentSlotUI(heroSection, new Vector2(310, -235), "ỦNG", "Ủng Chiến", defaultFont, EquipmentSlotType.Boots);
+            // Cột bên phải: Phòng ngự & Bảo vật
+            Button armBtn = CreateEquipmentSlotUI(heroSection, new Vector2(310, -10), "GIÁP", "Áo Giáp", defaultFont, EquipmentSlotType.Armor);
+            Button beltBtn = CreateEquipmentSlotUI(heroSection, new Vector2(310, -104), "ĐAI", "Thắt Lưng", defaultFont, EquipmentSlotType.Belt);
+            Button bootBtn = CreateEquipmentSlotUI(heroSection, new Vector2(310, -198), "ỦNG", "Ủng Chiến", defaultFont, EquipmentSlotType.Boots);
+            Button badgeBtn = CreateEquipmentSlotUI(heroSection, new Vector2(310, -292), "HUY HIỆU", "Huy Hiệu", defaultFont, EquipmentSlotType.Badge);
 
             // Dải thông báo phản hồi thao tác kéo thả (Notice Pill)
             GameObject noticeObj = new GameObject("Bag_Notice_Banner");
@@ -1523,11 +1533,13 @@ namespace Apocarrot.UI
             ui.heroPreviewTransform = heroVisualObj.transform;
 
             ui.weaponSlotBtn = wpnBtn;
+            ui.rangedSlotBtn = rangedBtn;
             ui.necklaceSlotBtn = neckBtn;
             ui.glovesSlotBtn = gloveBtn;
             ui.armorSlotBtn = armBtn;
             ui.beltSlotBtn = beltBtn;
             ui.bootsSlotBtn = bootBtn;
+            ui.badgeSlotBtn = badgeBtn;
 
             ui.tabBagButton = tabBagObj.GetComponent<Button>();
             ui.tabShopButton = tabShopObj.GetComponent<Button>();
@@ -1569,7 +1581,7 @@ namespace Apocarrot.UI
             rt.anchorMax = new Vector2(0.5f, 1f);
             rt.pivot = new Vector2(0.5f, 1f);
             rt.anchoredPosition = pos;
-            rt.sizeDelta = new Vector2(98, 98);
+            rt.sizeDelta = new Vector2(88, 88);
 
             Image bg = slotObj.AddComponent<Image>();
             bg.color = new Color(0.12f, 0.45f, 0.85f);

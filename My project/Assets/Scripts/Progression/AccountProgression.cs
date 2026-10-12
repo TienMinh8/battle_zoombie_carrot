@@ -62,9 +62,16 @@ namespace Apocarrot.Progression
 
         private void Start()
         {
-            if (currentData != null && currentData.EquippedWeapon != null)
+            if (currentData != null)
             {
-                SyncWeaponToRunInventory(currentData.EquippedWeapon);
+                if (currentData.EquippedWeapon != null)
+                {
+                    SyncWeaponToRunInventory(currentData.EquippedWeapon);
+                }
+                if (currentData.EquippedRangedWeapon != null)
+                {
+                    SyncWeaponToRunInventory(currentData.EquippedRangedWeapon);
+                }
             }
         }
 
@@ -72,11 +79,35 @@ namespace Apocarrot.Progression
         {
             if (data == null) return;
 
-            // Đảm bảo 6 ô trang bị trên người luôn hợp lệ
+            // Chuyển đổi dữ liệu cũ nếu trước đó súng bị trang bị nhầm vào ô Kiếm Cận Chiến
+            if (data.EquippedWeapon != null && !string.IsNullOrEmpty(data.EquippedWeapon.TemplateId))
+            {
+                string oldId = data.EquippedWeapon.TemplateId.ToLower();
+                if (oldId.Contains("tomato") || oldId.Contains("grape") || oldId.Contains("blaster") || oldId.Contains("cannon"))
+                {
+                    data.EquippedWeapon.slotType = EquipmentSlotType.RangedWeapon;
+                    if (data.EquippedRangedWeapon == null)
+                    {
+                        data.EquippedRangedWeapon = data.EquippedWeapon;
+                    }
+                    data.EquippedWeapon = EquipmentItem.CreateCarrotBlade(EquipmentRarity.Rare, 1);
+                }
+            }
+
+            // Đảm bảo 8 ô trang bị trên người luôn hợp lệ
             if (data.EquippedWeapon == null || string.IsNullOrEmpty(data.EquippedWeapon.TemplateId) || string.IsNullOrEmpty(data.EquippedWeapon.DisplayName))
             {
                 data.EquippedWeapon = EquipmentItem.CreateCarrotBlade(EquipmentRarity.Rare, 1);
             }
+            if (data.EquippedRangedWeapon == null || string.IsNullOrEmpty(data.EquippedRangedWeapon.TemplateId) || string.IsNullOrEmpty(data.EquippedRangedWeapon.DisplayName))
+            {
+                data.EquippedRangedWeapon = EquipmentItem.CreateTomatoBlaster(EquipmentRarity.Rare, 1);
+            }
+            else
+            {
+                data.EquippedRangedWeapon.slotType = EquipmentSlotType.RangedWeapon;
+            }
+
             if (data.EquippedNecklace == null || string.IsNullOrEmpty(data.EquippedNecklace.TemplateId) || string.IsNullOrEmpty(data.EquippedNecklace.DisplayName))
             {
                 data.EquippedNecklace = EquipmentItem.CreateCarrotPendant(EquipmentRarity.Rare, 1);
@@ -97,6 +128,10 @@ namespace Apocarrot.Progression
             {
                 data.EquippedBoots = EquipmentItem.CreateSwiftBoots(EquipmentRarity.Rare, 1);
             }
+            if (data.EquippedBadge == null || string.IsNullOrEmpty(data.EquippedBadge.TemplateId) || string.IsNullOrEmpty(data.EquippedBadge.DisplayName))
+            {
+                data.EquippedBadge = EquipmentItem.CreateCarrotBadge(EquipmentRarity.Rare, 1);
+            }
 
             if (data.OwnedEquipments == null)
             {
@@ -106,13 +141,22 @@ namespace Apocarrot.Progression
             // Loại bỏ hoàn toàn các trang bị lỗi rỗng templateId hoặc displayName
             data.OwnedEquipments.RemoveAll(it => it == null || string.IsNullOrEmpty(it.TemplateId) || string.IsNullOrEmpty(it.DisplayName));
 
-            // Loại bỏ các UID trùng lặp bất thường
+            // Loại bỏ các UID trùng lặp bất thường và chuẩn hóa SlotType cho súng/đại bác/huy hiệu
             HashSet<string> seenUids = new HashSet<string>();
             List<EquipmentItem> cleanList = new List<EquipmentItem>();
             foreach (var it in data.OwnedEquipments)
             {
                 if (!string.IsNullOrEmpty(it.Uid) && seenUids.Add(it.Uid))
                 {
+                    string id = it.TemplateId != null ? it.TemplateId.ToLower() : "";
+                    if (id.Contains("tomato") || id.Contains("grape") || id.Contains("blaster") || id.Contains("cannon"))
+                    {
+                        it.slotType = EquipmentSlotType.RangedWeapon;
+                    }
+                    else if (id.Contains("badge"))
+                    {
+                        it.slotType = EquipmentSlotType.Badge;
+                    }
                     cleanList.Add(it);
                 }
             }
@@ -300,7 +344,7 @@ namespace Apocarrot.Progression
             currentData.SetEquippedItem(item.SlotType, item);
 
             // Đồng bộ trực tiếp vũ khí vào RunInventory và các component chiến đấu của Player
-            if (item.SlotType == EquipmentSlotType.Weapon)
+            if (item.SlotType == EquipmentSlotType.Weapon || item.SlotType == EquipmentSlotType.RangedWeapon)
             {
                 SyncWeaponToRunInventory(item);
             }
@@ -314,21 +358,27 @@ namespace Apocarrot.Progression
             if (item == null || RunInventory.Instance == null) return;
 
             string id = item.TemplateId != null ? item.TemplateId.ToLower() : "";
-            if (id.Contains("tomato"))
+            if (item.SlotType == EquipmentSlotType.RangedWeapon || id.Contains("tomato") || id.Contains("grape") || id.Contains("blaster") || id.Contains("cannon") || id.Contains("splitter"))
             {
-                RunInventory.Instance.EquipRanged(WeaponItem.CreateTomatoBlaster(item.Level));
-            }
-            else if (id.Contains("grape"))
-            {
-                RunInventory.Instance.EquipRanged(new WeaponItem("grape_splitter", "Đại Bác Nho", WeaponType.Ranged, item.Level, new Color(0.65f, 0.15f, 0.95f)));
-            }
-            else if (id.Contains("axe"))
-            {
-                RunInventory.Instance.EquipMelee(new WeaponItem("carrot_axe", "Rìu Cà Rốt", WeaponType.Melee, item.Level, new Color(1.0f, 0.45f, 0.1f)));
+                if (id.Contains("grape") || id.Contains("cannon") || id.Contains("splitter"))
+                {
+                    RunInventory.Instance.EquipRanged(new WeaponItem("grape_splitter", "Đại Bác Nho", WeaponType.Ranged, item.Level, new Color(0.65f, 0.15f, 0.95f)));
+                }
+                else
+                {
+                    RunInventory.Instance.EquipRanged(WeaponItem.CreateTomatoBlaster(item.Level));
+                }
             }
             else
             {
-                RunInventory.Instance.EquipMelee(WeaponItem.CreateCarrotBlade(item.Level));
+                if (id.Contains("axe"))
+                {
+                    RunInventory.Instance.EquipMelee(new WeaponItem("carrot_axe", "Rìu Cà Rốt", WeaponType.Melee, item.Level, new Color(1.0f, 0.45f, 0.1f)));
+                }
+                else
+                {
+                    RunInventory.Instance.EquipMelee(WeaponItem.CreateCarrotBlade(item.Level));
+                }
             }
         }
 

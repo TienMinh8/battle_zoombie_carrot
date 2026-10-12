@@ -57,8 +57,8 @@ namespace Apocarrot.Inventory
 
             string spriteName;
 
-            // 1. Phân loại theo Vũ Khí (Weapon)
-            if (slot == EquipmentSlotType.Weapon || id.Contains("weapon") || id.Contains("blade") || id.Contains("axe") || id.Contains("blaster") || id.Contains("cannon") || id.Contains("splitter"))
+            // 1. Phân loại theo Vũ Khí (Weapon & RangedWeapon)
+            if (slot == EquipmentSlotType.Weapon || slot == EquipmentSlotType.RangedWeapon || id.Contains("weapon") || id.Contains("blade") || id.Contains("axe") || id.Contains("blaster") || id.Contains("cannon") || id.Contains("splitter"))
             {
                 if (id.Contains("axe"))
                 {
@@ -110,6 +110,11 @@ namespace Apocarrot.Inventory
             else if (slot == EquipmentSlotType.Belt || id.Contains("belt"))
             {
                 spriteName = lvl >= 3 ? "shield_dragon1" : (lvl >= 2 ? "shield1_skin_police" : "shield_1141");
+            }
+            // 7. Phân loại Huy Hiệu / Phù Hiệu (Badge)
+            else if (slot == EquipmentSlotType.Badge || id.Contains("badge"))
+            {
+                spriteName = "potion1";
             }
             else
             {

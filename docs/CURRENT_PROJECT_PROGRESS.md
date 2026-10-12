@@ -52,6 +52,19 @@
 - Popup Tạm dừng cho phép điều chỉnh thanh trượt Âm lượng Nhạc Nền (BGM Volume) và Âm lượng Hiệu Ứng (SFX Volume) theo thời gian thực (lưu vĩnh viễn qua PlayerPrefs).
 - Nút "▶ TIẾP TỤC" (Resume) và "🔄 CHƠI LẠI TRẬN (RESTART)".
 
+### 2.6. Làm Rõ Nhãn Chỉ Số Top Bar & Bổ Sung Ô Trang Bị Tầm Xa Độc Lập (🏹 TẦM XA)
+- **Vấn đề đã khắc phục:**
+  1. Các thanh chỉ số ở trên cùng (`TopBar`) và thanh chỉ số nhân vật (`statBar`) trước đó chỉ hiển thị số trần trụi (`3`, `20/20`, `1308`, `10`, `50`, `48`, `382`) không có nhãn/biểu tượng, khiến người chơi không hiểu là gì.
+     - **Giải pháp:** Cập nhật nhãn và biểu tượng trực quan: `⭐ CẤP 3`, `⚡ NL 20/20`, `💰 VÀNG 1,308`, `🪙 RUN 10`, `💎 GEM 50`, `⚔️ TỔNG CÔNG: 48`, `❤️ TỔNG MÁU: 382`. Kích thước thanh kéo dãn cân xứng, font chữ rõ ràng.
+  2. Không có ô hiển thị Vũ Khí Tầm Xa, người chơi không biết mình đang dùng súng gì. Trong túi đồ, Súng Cà Chua và Đại Bác Nho bị dán nhãn nhầm thành `[KIẾM]`. Khi trang bị súng lại ghi đè mất Kiếm Cận Chiến.
+     - **Giải pháp:**
+       - Tách biệt `EquipmentSlotType.RangedWeapon` (Vũ khí Tầm Xa) và `EquipmentSlotType.Badge` (Huy hiệu bảo hộ).
+       - Trong Balo, Súng Cà Chua và Đại Bác Nho hiển thị đúng nhãn `[SÚNG]` / `◆ TẦM XA`.
+       - Mở rộng giao diện nhân vật thành **8 Ô Trang Bị Chuẩn đối xứng**:
+         - Cột trái (Công kích): `⚔️ CẬN CHIẾN` (Kiếm Cà Rốt), `🏹 TẦM XA` (Súng Cà Chua / Đại Bác Nho), `📿 DÂY CHUYỀN`, `🥊 GĂNG TAY`.
+         - Cột phải (Phòng thủ & Hỗ trợ): `🛡️ ÁO GIÁP`, `🥋 THẮT LƯNG`, `👢 ỦNG CHIẾN`, `🥕 HUY HIỆU`.
+       - Người chơi nhìn thấy rõ ràng cả 2 vũ khí Melee & Ranged trên người, có thể kéo thả thay thế hoặc nâng cấp súng mà không ảnh hưởng tới kiếm, và vũ khí tầm xa tự động đồng bộ vào chiến đấu trong game.
+
 ---
 
 ## 3. BẢNG TIẾN ĐỘ THEO CÁC PHIÊN BẢN (v0.1 ĐẾN v1.0)

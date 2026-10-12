@@ -61,13 +61,15 @@ namespace Apocarrot.Progression
         [Header("Achievements / Milestones")]
         public List<AchievementProgress> Achievements = new List<AchievementProgress>();
 
-        [Header("Equipped Slots (6 Ô Trang Bị Chuẩn Survivor/Archero)")]
-        public EquipmentItem EquippedWeapon;
-        public EquipmentItem EquippedNecklace;
-        public EquipmentItem EquippedGloves;
-        public EquipmentItem EquippedArmor;
-        public EquipmentItem EquippedBelt;
-        public EquipmentItem EquippedBoots;
+        [Header("Equipped Slots (8 Ô Trang Bị Chuẩn: Cận Chiến, Tầm Xa, Giáp, Đồ Phụ Trợ)")]
+        public EquipmentItem EquippedWeapon;       // ⚔️ Cận Chiến (Carrot Blade)
+        public EquipmentItem EquippedRangedWeapon; // 🏹 Tầm Xa (Tomato Blaster / Grape Cannon)
+        public EquipmentItem EquippedNecklace;     // 📿 Dây Chuyền (Carrot Pendant)
+        public EquipmentItem EquippedGloves;       // 🥊 Găng Tay (Warrior Gloves)
+        public EquipmentItem EquippedArmor;        // 🛡️ Áo Giáp (Rabbit Vest)
+        public EquipmentItem EquippedBelt;         // 🥋 Thắt Lưng (Leather Belt)
+        public EquipmentItem EquippedBoots;        // 👢 Giày Chạy (Swift Boots)
+        public EquipmentItem EquippedBadge;        // 🥕 Huy Hiệu / Bảo Vật (Carrot Royal Badge)
 
         [Header("Bag Inventory (Túi đồ chứa các trang bị sở hữu)")]
         public List<EquipmentItem> OwnedEquipments = new List<EquipmentItem>();
@@ -91,17 +93,19 @@ namespace Apocarrot.Progression
         }
 
         /// <summary>
-        /// Tạo bộ trang bị mẫu đầy đủ 6 ô và túi đồ phong phú giống ảnh tham chiếu
+        /// Tạo bộ trang bị mẫu đầy đủ 8 ô và túi đồ phong phú giống ảnh tham chiếu
         /// </summary>
         public void InitializeDefaultEquipment()
         {
             // Trang bị mặc định trên người (Rare / Hiếm - màu xanh lam như ảnh)
             EquippedWeapon = EquipmentItem.CreateCarrotBlade(EquipmentRarity.Rare, 1);
+            EquippedRangedWeapon = EquipmentItem.CreateTomatoBlaster(EquipmentRarity.Rare, 1);
             EquippedNecklace = EquipmentItem.CreateCarrotPendant(EquipmentRarity.Rare, 1);
             EquippedGloves = EquipmentItem.CreateWarriorGloves(EquipmentRarity.Rare, 1);
             EquippedArmor = EquipmentItem.CreateRabbitVest(EquipmentRarity.Rare, 1);
             EquippedBelt = EquipmentItem.CreateLeatherBelt(EquipmentRarity.Rare, 1);
             EquippedBoots = EquipmentItem.CreateSwiftBoots(EquipmentRarity.Rare, 1);
+            EquippedBadge = EquipmentItem.CreateCarrotBadge(EquipmentRarity.Rare, 1);
 
             // Các món đồ sẵn trong túi (bao gồm các món cùng loại để thử nghiệm Fuse)
             OwnedEquipments.Clear();
@@ -129,11 +133,13 @@ namespace Apocarrot.Progression
             switch (slot)
             {
                 case EquipmentSlotType.Weapon: return EquippedWeapon;
+                case EquipmentSlotType.RangedWeapon: return EquippedRangedWeapon;
                 case EquipmentSlotType.Necklace: return EquippedNecklace;
                 case EquipmentSlotType.Gloves: return EquippedGloves;
                 case EquipmentSlotType.Armor: return EquippedArmor;
                 case EquipmentSlotType.Belt: return EquippedBelt;
                 case EquipmentSlotType.Boots: return EquippedBoots;
+                case EquipmentSlotType.Badge: return EquippedBadge;
                 default: return null;
             }
         }
@@ -143,11 +149,13 @@ namespace Apocarrot.Progression
             switch (slot)
             {
                 case EquipmentSlotType.Weapon: EquippedWeapon = item; break;
+                case EquipmentSlotType.RangedWeapon: EquippedRangedWeapon = item; break;
                 case EquipmentSlotType.Necklace: EquippedNecklace = item; break;
                 case EquipmentSlotType.Gloves: EquippedGloves = item; break;
                 case EquipmentSlotType.Armor: EquippedArmor = item; break;
                 case EquipmentSlotType.Belt: EquippedBelt = item; break;
                 case EquipmentSlotType.Boots: EquippedBoots = item; break;
+                case EquipmentSlotType.Badge: EquippedBadge = item; break;
             }
         }
 
@@ -155,11 +163,13 @@ namespace Apocarrot.Progression
         {
             int total = 0;
             if (EquippedWeapon != null) total += EquippedWeapon.TotalAttack;
+            if (EquippedRangedWeapon != null) total += EquippedRangedWeapon.TotalAttack;
             if (EquippedNecklace != null) total += EquippedNecklace.TotalAttack;
             if (EquippedGloves != null) total += EquippedGloves.TotalAttack;
             if (EquippedArmor != null) total += EquippedArmor.TotalAttack;
             if (EquippedBelt != null) total += EquippedBelt.TotalAttack;
             if (EquippedBoots != null) total += EquippedBoots.TotalAttack;
+            if (EquippedBadge != null) total += EquippedBadge.TotalAttack;
             return total;
         }
 
@@ -167,11 +177,13 @@ namespace Apocarrot.Progression
         {
             int total = 0;
             if (EquippedWeapon != null) total += EquippedWeapon.TotalHealth;
+            if (EquippedRangedWeapon != null) total += EquippedRangedWeapon.TotalHealth;
             if (EquippedNecklace != null) total += EquippedNecklace.TotalHealth;
             if (EquippedGloves != null) total += EquippedGloves.TotalHealth;
             if (EquippedArmor != null) total += EquippedArmor.TotalHealth;
             if (EquippedBelt != null) total += EquippedBelt.TotalHealth;
             if (EquippedBoots != null) total += EquippedBoots.TotalHealth;
+            if (EquippedBadge != null) total += EquippedBadge.TotalHealth;
             return total;
         }
 

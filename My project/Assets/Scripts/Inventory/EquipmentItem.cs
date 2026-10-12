@@ -5,12 +5,14 @@ namespace Apocarrot.Inventory
 {
     public enum EquipmentSlotType
     {
-        Weapon = 0,    // Vũ khí chính (Carrot Blade, Tomato Blaster, Grape Cannon)
-        Necklace = 1,  // Dây chuyền / Trợ thủ (Carrot Pendant)
-        Gloves = 2,    // Găng tay / Hộp chiến binh (Warrior Gloves)
-        Armor = 3,     // Áo giáp / Thân trên (Carrot Vest)
-        Belt = 4,      // Thắt lưng (Leather Belt)
-        Boots = 5      // Giày tốc độ (Swift Boots)
+        Weapon = 0,        // Vũ khí cận chiến (Carrot Blade, Carrot Axe)
+        Necklace = 1,      // Dây chuyền (Carrot Pendant)
+        Gloves = 2,        // Găng tay (Warrior Gloves)
+        Armor = 3,         // Áo giáp (Rabbit Vest)
+        Belt = 4,          // Thắt lưng (Leather Belt)
+        Boots = 5,         // Giày tốc độ (Swift Boots)
+        RangedWeapon = 6,  // Vũ khí tầm xa (Tomato Blaster, Grape Cannon)
+        Badge = 7          // Huy hiệu bảo hộ (Carrot Royal Badge)
     }
 
     public enum EquipmentRarity
@@ -129,11 +131,13 @@ namespace Apocarrot.Inventory
             switch (slotType)
             {
                 case EquipmentSlotType.Weapon: return "KIẾM";
+                case EquipmentSlotType.RangedWeapon: return "SÚNG";
                 case EquipmentSlotType.Necklace: return "DÂY";
                 case EquipmentSlotType.Gloves: return "GĂNG";
                 case EquipmentSlotType.Armor: return "GIÁP";
                 case EquipmentSlotType.Belt: return "ĐAI";
                 case EquipmentSlotType.Boots: return "ỦNG";
+                case EquipmentSlotType.Badge: return "HUY HIỆU";
                 default: return "ĐỒ";
             }
         }
@@ -142,12 +146,14 @@ namespace Apocarrot.Inventory
         {
             switch (slotType)
             {
-                case EquipmentSlotType.Weapon: return "◆ VŨ KHÍ";
+                case EquipmentSlotType.Weapon: return "◆ CẬN CHIẾN";
+                case EquipmentSlotType.RangedWeapon: return "◆ TẦM XA";
                 case EquipmentSlotType.Necklace: return "◆ DÂY CHUYỀN";
                 case EquipmentSlotType.Gloves: return "◆ GĂNG TAY";
                 case EquipmentSlotType.Armor: return "◆ ÁO GIÁP";
                 case EquipmentSlotType.Belt: return "◆ THẮT LƯNG";
                 case EquipmentSlotType.Boots: return "◆ ỦNG CHIẾN";
+                case EquipmentSlotType.Badge: return "◆ HUY HIỆU";
                 default: return "◆ TRANG BỊ";
             }
         }
@@ -173,13 +179,15 @@ namespace Apocarrot.Inventory
         {
             switch (slotType)
             {
-                case EquipmentSlotType.Weapon: return "Vũ khí";
-                case EquipmentSlotType.Necklace: return "Dây chuyền";
-                case EquipmentSlotType.Gloves: return "Găng tay";
-                case EquipmentSlotType.Armor: return "Áo giáp";
-                case EquipmentSlotType.Belt: return "Thắt lưng";
-                case EquipmentSlotType.Boots: return "Giày chạy";
-                default: return "Trang bị";
+                case EquipmentSlotType.Weapon: return "Cận Chiến";
+                case EquipmentSlotType.RangedWeapon: return "Tầm Xa";
+                case EquipmentSlotType.Necklace: return "Dây Chuyền";
+                case EquipmentSlotType.Gloves: return "Găng Tay";
+                case EquipmentSlotType.Armor: return "Áo Giáp";
+                case EquipmentSlotType.Belt: return "Thắt Lưng";
+                case EquipmentSlotType.Boots: return "Giày Chạy";
+                case EquipmentSlotType.Badge: return "Huy Hiệu";
+                default: return "Trang Bị";
             }
         }
 
@@ -213,17 +221,17 @@ namespace Apocarrot.Inventory
         // ========================== FACTORY HELPER ==========================
         public static EquipmentItem CreateCarrotBlade(EquipmentRarity r = EquipmentRarity.Rare, int lvl = 1)
         {
-            return new EquipmentItem("wpn_carrot_blade", "Thanh Kiếm Cà Rốt", EquipmentSlotType.Weapon, r, lvl, 7, 0, "Lưỡi kiếm bén ngót từ tinh hoa củ cà rốt hoàng gia.");
+            return new EquipmentItem("wpn_carrot_blade", "Thanh Kiếm Cà Rốt", EquipmentSlotType.Weapon, r, lvl, 7, 0, "Lưỡi kiếm cận chiến bén ngót vung chém quét mục tiêu.");
         }
 
         public static EquipmentItem CreateTomatoBlaster(EquipmentRarity r = EquipmentRarity.Rare, int lvl = 1)
         {
-            return new EquipmentItem("wpn_tomato_blaster", "Súng Cà Chua Siêu Âm", EquipmentSlotType.Weapon, r, lvl, 6, 0, "Súng bắn đạn cà chua tự động ngắm mục tiêu tầm xa.");
+            return new EquipmentItem("wpn_tomato_blaster", "Súng Cà Chua Siêu Âm", EquipmentSlotType.RangedWeapon, r, lvl, 6, 0, "Vũ khí tầm xa: tự động ngắm bắn đạn cà chua liên thanh.");
         }
 
         public static EquipmentItem CreateGrapeCannon(EquipmentRarity r = EquipmentRarity.Great, int lvl = 1)
         {
-            return new EquipmentItem("wpn_grape_cannon", "Đại Bác Chùm Nho", EquipmentSlotType.Weapon, r, lvl, 5, 0, "Khai hỏa chùm đạn nho càn quét diện rộng.");
+            return new EquipmentItem("wpn_grape_cannon", "Đại Bác Chùm Nho", EquipmentSlotType.RangedWeapon, r, lvl, 5, 0, "Vũ khí tầm xa: khai hỏa chùm đạn nho càn quét diện rộng.");
         }
 
         public static EquipmentItem CreateCarrotPendant(EquipmentRarity r = EquipmentRarity.Rare, int lvl = 1)
@@ -249,6 +257,11 @@ namespace Apocarrot.Inventory
         public static EquipmentItem CreateSwiftBoots(EquipmentRarity r = EquipmentRarity.Rare, int lvl = 1)
         {
             return new EquipmentItem("boot_swift", "Ủng Chiến Cao Cổ", EquipmentSlotType.Boots, r, lvl, 1, 30, "Ủng tăng tốc giúp Thỏ lướt gió né đòn chớp nhoáng.");
+        }
+
+        public static EquipmentItem CreateCarrotBadge(EquipmentRarity r = EquipmentRarity.Rare, int lvl = 1)
+        {
+            return new EquipmentItem("badge_royal_carrot", "Huy Hiệu Cà Rốt Vàng", EquipmentSlotType.Badge, r, lvl, 2, 40, "Huân chương hoàng gia thỏ bảo hộ và gia tăng sĩ khí.");
         }
     }
 }

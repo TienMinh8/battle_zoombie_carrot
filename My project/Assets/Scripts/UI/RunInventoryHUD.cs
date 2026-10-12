@@ -171,11 +171,22 @@ namespace Apocarrot.UI
 
                 Image rImg = rSpTr != null ? rSpTr.GetComponent<Image>() : null;
                 WeaponItem rItem = inventory != null ? inventory.EquippedRanged : null;
+                var accRanged = AccountProgression.Instance?.Data?.EquippedRangedWeapon;
 
                 if (rItem != null)
                 {
                     equippedRangedText.text = $"[TẦM XA]\n{rItem.DisplayName} Lv.{rItem.Level}";
                     Sprite sp = WeaponSpriteService.GetWeaponItemSprite(rItem);
+                    if (rImg != null && sp != null)
+                    {
+                        rImg.sprite = sp;
+                        rImg.enabled = true;
+                    }
+                }
+                else if (accRanged != null)
+                {
+                    equippedRangedText.text = $"[TẦM XA]\n{accRanged.DisplayName} Lv.{accRanged.Level}";
+                    Sprite sp = WeaponSpriteService.GetEquipmentSprite(accRanged);
                     if (rImg != null && sp != null)
                     {
                         rImg.sprite = sp;
