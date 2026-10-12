@@ -68,7 +68,7 @@ namespace Apocarrot.Arena
             {
                 Instance = this;
             }
-            waves = WaveData.CreateDemoWaves();
+            waves = WaveScalingService.GenerateBalancedWaves();
         }
 
         private void Start()
@@ -210,21 +210,8 @@ namespace Apocarrot.Arena
         private void SpawnSingleEnemy(EnemyVariantType type)
         {
             Vector3 spawnPos = GetRandomSpawnPosition();
-            EnemyData data;
-
-            switch (type)
-            {
-                case EnemyVariantType.Fast:
-                    data = EnemyData.CreateFast();
-                    break;
-                case EnemyVariantType.Elite:
-                    data = EnemyData.CreateElite();
-                    break;
-                case EnemyVariantType.Basic:
-                default:
-                    data = EnemyData.CreateBasic();
-                    break;
-            }
+            // Tự động scale lượng máu và sát thương của quái theo cấp độ Wave hiện tại
+            EnemyData data = WaveScalingService.CreateScaledEnemyData(type, CurrentWaveNumber);
 
             GameObject enemy = ZombieCarrotAI.CreateZombieCarrotPrefab(spawnPos, data);
             EnemyHealth eh = enemy.GetComponent<EnemyHealth>();

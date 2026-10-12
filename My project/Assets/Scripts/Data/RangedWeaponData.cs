@@ -48,7 +48,7 @@ namespace Apocarrot.Data
         public string Description => description;
 
         /// <summary>
-        /// Tạo cấu hình Tomato Blaster (Lv.1): 1 viên đạn cà chua đỏ, tốc độ bay nhanh, bắn tập trung
+        /// Tạo cấu hình Tomato Blaster: Đạn cà chua tự động bắn tỉa hỗ trợ, rỉa máu mục tiêu từ xa
         /// </summary>
         public static RangedWeaponData CreateTomatoBlaster(int level = 1)
         {
@@ -56,20 +56,21 @@ namespace Apocarrot.Data
             data.weaponId = "tomato_blaster";
             data.weaponName = "Tomato Blaster";
             data.level = level;
-            data.damage = 22f * level;
-            data.fireCooldown = 0.95f;
-            data.range = 9.0f;
-            data.projectileSpeed = 16.0f;
+            // Lv.1: 8 DMG (hỗ trợ rỉa máu, không lấn át đòn chém cận chiến) | Lv.2: 15 DMG | Lv.3: 22 DMG
+            data.damage = 8f + (level - 1) * 7f;
+            data.fireCooldown = 1.05f;
+            data.range = 8.5f;
+            data.projectileSpeed = 15.0f;
             data.projectileCount = 1;
             data.spreadAngle = 0f;
             data.projectileColor = new Color(0.95f, 0.18f, 0.15f); // Đỏ cà chua
-            data.projectileScale = new Vector3(0.45f, 0.45f, 0.45f);
-            data.description = "Bắn đạn cà chua đỏ mọng trực diện, hồi chiêu nhanh.";
+            data.projectileScale = new Vector3(0.42f, 0.42f, 0.42f);
+            data.description = "Bắn đạn cà chua đỏ mọng tự động ngắm mục tiêu từ xa để rỉa máu.";
             return data;
         }
 
         /// <summary>
-        /// Tạo cấu hình Grape Splitter (Lv.1): Chùm 3 viên đạn nho tím tỏa quạt 30 độ, diện rộng
+        /// Tạo cấu hình Grape Splitter: Chùm 3 viên đạn nho tím tỏa quạt 30 độ, diện rộng
         /// </summary>
         public static RangedWeaponData CreateGrapeSplitter(int level = 1)
         {
@@ -77,15 +78,16 @@ namespace Apocarrot.Data
             data.weaponId = "grape_splitter";
             data.weaponName = "Grape Splitter";
             data.level = level;
-            data.damage = 15f * level;
-            data.fireCooldown = 1.75f;
-            data.range = 8.0f;
+            // Lv.1: 5 DMG x 3 viên (15 DMG) | Lv.2: 9 DMG x 3 viên | Lv.3: 13 DMG x 3 viên
+            data.damage = 5f + (level - 1) * 4f;
+            data.fireCooldown = 1.65f;
+            data.range = 7.5f;
             data.projectileSpeed = 12.0f;
             data.projectileCount = 3;
-            data.spreadAngle = 32f;
+            data.spreadAngle = 30f;
             data.projectileColor = new Color(0.65f, 0.15f, 0.95f); // Tím nho
             data.projectileScale = new Vector3(0.35f, 0.35f, 0.35f);
-            data.description = "Bắn chùm 3 viên đạn nho tím tỏa quạt góc rộng, sát thương đa mục tiêu.";
+            data.description = "Bắn chùm 3 viên đạn nho tím tỏa quạt góc rộng làm mềm đám đông kẻ địch.";
             return data;
         }
     }
