@@ -367,17 +367,49 @@ namespace Apocarrot.UI
             Transform nameTr = btn.transform.Find("ItemName");
             Image bgImage = btn.GetComponent<Image>();
 
+            Transform spriteImgTr = btn.transform.Find("SpriteImg");
+            if (spriteImgTr == null)
+            {
+                GameObject sObj = new GameObject("SpriteImg");
+                sObj.transform.SetParent(btn.transform, false);
+                RectTransform sRt = sObj.AddComponent<RectTransform>();
+                sRt.anchoredPosition = new Vector2(0, 10);
+                sRt.sizeDelta = new Vector2(50, 50);
+                Image sImg = sObj.AddComponent<Image>();
+                sImg.preserveAspect = true;
+                spriteImgTr = sObj.transform;
+            }
+            Image slotSprite = spriteImgTr.GetComponent<Image>();
+
             if (item != null)
             {
                 if (bgImage != null) bgImage.color = item.GetRarityColor();
-                if (itemIconTr != null)
+                Sprite sp = WeaponSpriteService.GetEquipmentSprite(item);
+                if (sp != null)
                 {
-                    Text iconTxt = itemIconTr.GetComponent<Text>();
-                    if (iconTxt != null)
+                    slotSprite.sprite = sp;
+                    slotSprite.enabled = true;
+                    slotSprite.color = Color.white;
+                    if (itemIconTr != null)
                     {
-                        iconTxt.text = $"[{item.GetSlotIcon()}]\n<size=11><color=#33ff88>{item.GetPrimaryStatText()}</color></size>";
+                        RectTransform iRt = itemIconTr.GetComponent<RectTransform>();
+                        if (iRt != null) iRt.anchoredPosition = new Vector2(0, -18);
+                        Text iconTxt = itemIconTr.GetComponent<Text>();
+                        if (iconTxt != null) iconTxt.text = $"<size=10><color=#33ff88>{item.GetPrimaryStatText()}</color></size>";
                     }
                 }
+                else
+                {
+                    slotSprite.enabled = false;
+                    if (itemIconTr != null)
+                    {
+                        RectTransform iRt = itemIconTr.GetComponent<RectTransform>();
+                        if (iRt != null) iRt.anchoredPosition = new Vector2(0, 8);
+                        Text iconTxt = itemIconTr.GetComponent<Text>();
+                        if (iconTxt != null) iconTxt.text = $"[{item.GetSlotIcon()}]\n<size=11><color=#33ff88>{item.GetPrimaryStatText()}</color></size>";
+                    }
+                }
+
                 if (levelBadgeTr != null)
                 {
                     Text lvlTxt = levelBadgeTr.GetComponent<Text>();
@@ -400,9 +432,12 @@ namespace Apocarrot.UI
             }
             else
             {
+                slotSprite.enabled = false;
                 if (bgImage != null) bgImage.color = new Color(0.12f, 0.16f, 0.24f, 0.9f);
                 if (itemIconTr != null)
                 {
+                    RectTransform iRt = itemIconTr.GetComponent<RectTransform>();
+                    if (iRt != null) iRt.anchoredPosition = new Vector2(0, 8);
                     Text iconTxt = itemIconTr.GetComponent<Text>();
                     if (iconTxt != null) iconTxt.text = $"[TRỐNG]\n<size=10><color=#888888>{GetEmptySlotLabel(slot)}</color></size>";
                 }
@@ -504,13 +539,42 @@ namespace Apocarrot.UI
             }
 
             Transform iconTr = cardTr.Find("Icon");
-            if (iconTr != null)
+            Transform spriteImgTr = cardTr.Find("SpriteImg");
+            if (spriteImgTr == null)
             {
-                Text iTxt = iconTr.GetComponent<Text>();
-                if (iTxt != null)
+                GameObject sObj = new GameObject("SpriteImg");
+                sObj.transform.SetParent(cardTr, false);
+                RectTransform sRt = sObj.AddComponent<RectTransform>();
+                sRt.anchoredPosition = new Vector2(0, 10);
+                sRt.sizeDelta = new Vector2(56, 56);
+                Image sImg = sObj.AddComponent<Image>();
+                sImg.preserveAspect = true;
+                spriteImgTr = sObj.transform;
+            }
+            Image cardSprite = spriteImgTr.GetComponent<Image>();
+            Sprite sp = WeaponSpriteService.GetEquipmentSprite(item);
+            if (sp != null)
+            {
+                cardSprite.sprite = sp;
+                cardSprite.enabled = true;
+                cardSprite.color = Color.white;
+                if (iconTr != null)
                 {
-                    iTxt.font = UIFont;
-                    iTxt.text = $"<b>[{item.GetSlotIcon()}]</b>\n<size=11><color=#33ff77>{item.GetPrimaryStatText()}</color></size>";
+                    RectTransform iRt = iconTr.GetComponent<RectTransform>();
+                    if (iRt != null) iRt.anchoredPosition = new Vector2(0, -22);
+                    Text iTxt = iconTr.GetComponent<Text>();
+                    if (iTxt != null) iTxt.text = $"<size=11><color=#33ff77>{item.GetPrimaryStatText()}</color></size>";
+                }
+            }
+            else
+            {
+                cardSprite.enabled = false;
+                if (iconTr != null)
+                {
+                    RectTransform iRt = iconTr.GetComponent<RectTransform>();
+                    if (iRt != null) iRt.anchoredPosition = new Vector2(0, 6);
+                    Text iTxt = iconTr.GetComponent<Text>();
+                    if (iTxt != null) iTxt.text = $"<b>[{item.GetSlotIcon()}]</b>\n<size=11><color=#33ff77>{item.GetPrimaryStatText()}</color></size>";
                 }
             }
 
@@ -595,11 +659,30 @@ namespace Apocarrot.UI
             lTxt.color = Color.white;
             lTxt.text = $"Lv.{item.Level}";
 
+            // Sprite ảnh vũ khí 2D chân thực
+            GameObject sObj = new GameObject("SpriteImg");
+            sObj.transform.SetParent(cardObj.transform, false);
+            RectTransform sRt = sObj.AddComponent<RectTransform>();
+            sRt.anchoredPosition = new Vector2(0, 10);
+            sRt.sizeDelta = new Vector2(56, 56);
+            Image sImg = sObj.AddComponent<Image>();
+            sImg.preserveAspect = true;
+            Sprite sp = WeaponSpriteService.GetEquipmentSprite(item);
+            if (sp != null)
+            {
+                sImg.sprite = sp;
+                sImg.color = Color.white;
+            }
+            else
+            {
+                sImg.enabled = false;
+            }
+
             // Center Content (Icon Symbol & Primary Stat)
             GameObject iconObj = new GameObject("Icon");
             iconObj.transform.SetParent(cardObj.transform, false);
             RectTransform iRt = iconObj.AddComponent<RectTransform>();
-            iRt.anchoredPosition = new Vector2(0, 6);
+            iRt.anchoredPosition = sp != null ? new Vector2(0, -22) : new Vector2(0, 6);
             iRt.sizeDelta = new Vector2(104, 48);
             Text iTxt = iconObj.AddComponent<Text>();
             iTxt.font = UIFont;
@@ -607,7 +690,7 @@ namespace Apocarrot.UI
             iTxt.fontStyle = FontStyle.Bold;
             iTxt.alignment = TextAnchor.MiddleCenter;
             iTxt.color = Color.white;
-            iTxt.text = $"<b>[{item.GetSlotIcon()}]</b>\n<size=11><color=#33ff77>{item.GetPrimaryStatText()}</color></size>";
+            iTxt.text = sp != null ? $"<size=11><color=#33ff77>{item.GetPrimaryStatText()}</color></size>" : $"<b>[{item.GetSlotIcon()}]</b>\n<size=11><color=#33ff77>{item.GetPrimaryStatText()}</color></size>";
 
             // Name
             GameObject nameObj = new GameObject("Name");
@@ -694,11 +777,37 @@ namespace Apocarrot.UI
             Transform iconTr = cardTr.Find("Icon");
             if (iconTr != null)
             {
-                Text iTxt = iconTr.GetComponent<Text>();
-                if (iTxt != null)
+                Sprite sp = WeaponSpriteService.GetShopItemSprite(data);
+                Transform spTr = iconTr.Find("ShopSprite");
+                if (spTr == null)
                 {
-                    iTxt.font = UIFont;
-                    iTxt.text = data.ItemType == ShopItemType.Heal ? "❤️" : "🗡️";
+                    GameObject sObj = new GameObject("ShopSprite");
+                    sObj.transform.SetParent(iconTr, false);
+                    RectTransform sRt = sObj.AddComponent<RectTransform>();
+                    sRt.anchorMin = Vector2.zero;
+                    sRt.anchorMax = Vector2.one;
+                    sRt.sizeDelta = Vector2.zero;
+                    Image sImg = sObj.AddComponent<Image>();
+                    sImg.preserveAspect = true;
+                    spTr = sObj.transform;
+                }
+                Image shopImg = spTr.GetComponent<Image>();
+                Text iTxt = iconTr.GetComponent<Text>();
+                if (sp != null)
+                {
+                    shopImg.sprite = sp;
+                    shopImg.enabled = true;
+                    shopImg.color = Color.white;
+                    if (iTxt != null) iTxt.text = "";
+                }
+                else
+                {
+                    shopImg.enabled = false;
+                    if (iTxt != null)
+                    {
+                        iTxt.font = UIFont;
+                        iTxt.text = data.ItemType == ShopItemType.Heal ? "❤️" : "🗡️";
+                    }
                 }
             }
 
@@ -767,6 +876,27 @@ namespace Apocarrot.UI
             iTxt.alignment = TextAnchor.MiddleCenter;
             iTxt.text = data.ItemType == ShopItemType.Heal ? "❤️" : "🗡️";
 
+            Sprite sp = WeaponSpriteService.GetShopItemSprite(data);
+            GameObject sObj = new GameObject("ShopSprite");
+            sObj.transform.SetParent(iconObj.transform, false);
+            RectTransform sRt = sObj.AddComponent<RectTransform>();
+            sRt.anchorMin = Vector2.zero;
+            sRt.anchorMax = Vector2.one;
+            sRt.sizeDelta = Vector2.zero;
+            Image sImg = sObj.AddComponent<Image>();
+            sImg.preserveAspect = true;
+            if (sp != null)
+            {
+                sImg.sprite = sp;
+                sImg.color = Color.white;
+                sImg.enabled = true;
+                iTxt.text = "";
+            }
+            else
+            {
+                sImg.enabled = false;
+            }
+
             // Title & Desc
             GameObject infoObj = new GameObject("Info");
             infoObj.transform.SetParent(cardObj.transform, false);
@@ -795,7 +925,6 @@ namespace Apocarrot.UI
 
             Image bImg = buyBtnObj.AddComponent<Image>();
             bImg.color = canAfford ? new Color(0.2f, 0.75f, 0.35f) : new Color(0.35f, 0.35f, 0.4f);
-            bImg.color = canAfford ? new Color(0.2f, 0.75f, 0.35f) : new Color(0.35f, 0.35f, 0.4f);
 
             GameObject bTxtObj = new GameObject("Text");
             bTxtObj.transform.SetParent(buyBtnObj.transform, false);
@@ -804,7 +933,7 @@ namespace Apocarrot.UI
             btRt.anchorMax = Vector2.one;
             btRt.sizeDelta = Vector2.zero;
             Text bTxt = bTxtObj.AddComponent<Text>();
-            bTxt.font = uiFont;
+            bTxt.font = UIFont;
             bTxt.fontSize = 15;
             bTxt.fontStyle = FontStyle.Bold;
             bTxt.alignment = TextAnchor.MiddleCenter;

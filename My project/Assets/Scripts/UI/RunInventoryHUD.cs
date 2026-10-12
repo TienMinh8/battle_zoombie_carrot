@@ -101,38 +101,95 @@ namespace Apocarrot.UI
             // 1. Cập nhật Vũ khí Cận Chiến đang dùng
             if (equippedMeleeText != null)
             {
-                if (inventory != null && inventory.EquippedMelee != null)
+                var meleeParent = equippedMeleeText.transform.parent;
+                Transform mSpTr = meleeParent != null ? meleeParent.Find("SpriteImg") : null;
+                if (meleeParent != null && mSpTr == null)
                 {
-                    equippedMeleeText.text = $"[CẬN CHIẾN]\n{inventory.EquippedMelee.DisplayName} Lv.{inventory.EquippedMelee.Level}";
+                    GameObject sObj = new GameObject("SpriteImg");
+                    sObj.transform.SetParent(meleeParent, false);
+                    RectTransform sRt = sObj.AddComponent<RectTransform>();
+                    sRt.anchorMin = new Vector2(0, 0.5f);
+                    sRt.anchorMax = new Vector2(0, 0.5f);
+                    sRt.pivot = new Vector2(0, 0.5f);
+                    sRt.anchoredPosition = new Vector2(6, 0);
+                    sRt.sizeDelta = new Vector2(38, 38);
+                    Image sImg = sObj.AddComponent<Image>();
+                    sImg.preserveAspect = true;
+                    mSpTr = sObj.transform;
+                }
+
+                Image mImg = mSpTr != null ? mSpTr.GetComponent<Image>() : null;
+                WeaponItem wItem = inventory != null ? inventory.EquippedMelee : null;
+                var accWpn = AccountProgression.Instance?.Data?.EquippedWeapon;
+
+                if (wItem != null)
+                {
+                    equippedMeleeText.text = $"[CẬN CHIẾN]\n{wItem.DisplayName} Lv.{wItem.Level}";
+                    Sprite sp = WeaponSpriteService.GetWeaponItemSprite(wItem);
+                    if (mImg != null && sp != null)
+                    {
+                        mImg.sprite = sp;
+                        mImg.enabled = true;
+                    }
+                }
+                else if (accWpn != null)
+                {
+                    equippedMeleeText.text = $"[CẬN CHIẾN]\n{accWpn.DisplayName} Lv.{accWpn.Level}";
+                    Sprite sp = WeaponSpriteService.GetEquipmentSprite(accWpn);
+                    if (mImg != null && sp != null)
+                    {
+                        mImg.sprite = sp;
+                        mImg.enabled = true;
+                    }
                 }
                 else
                 {
-                    var accWpn = AccountProgression.Instance?.Data?.EquippedWeapon;
-                    if (accWpn != null)
-                    {
-                        equippedMeleeText.text = $"[CẬN CHIẾN]\n{accWpn.DisplayName} Lv.{accWpn.Level}";
-                    }
-                    else
-                    {
-                        equippedMeleeText.text = "[CẬN CHIẾN]\n(Trống)";
-                    }
+                    equippedMeleeText.text = "[CẬN CHIẾN]\n(Trống)";
+                    if (mImg != null) mImg.enabled = false;
                 }
             }
 
             // 2. Cập nhật Vũ khí Tầm Xa đang dùng
             if (equippedRangedText != null)
             {
-                if (inventory != null && inventory.EquippedRanged != null)
+                var rangedParent = equippedRangedText.transform.parent;
+                Transform rSpTr = rangedParent != null ? rangedParent.Find("SpriteImg") : null;
+                if (rangedParent != null && rSpTr == null)
                 {
-                    equippedRangedText.text = $"[TẦM XA]\n{inventory.EquippedRanged.DisplayName} Lv.{inventory.EquippedRanged.Level}";
+                    GameObject sObj = new GameObject("SpriteImg");
+                    sObj.transform.SetParent(rangedParent, false);
+                    RectTransform sRt = sObj.AddComponent<RectTransform>();
+                    sRt.anchorMin = new Vector2(0, 0.5f);
+                    sRt.anchorMax = new Vector2(0, 0.5f);
+                    sRt.pivot = new Vector2(0, 0.5f);
+                    sRt.anchoredPosition = new Vector2(6, 0);
+                    sRt.sizeDelta = new Vector2(38, 38);
+                    Image sImg = sObj.AddComponent<Image>();
+                    sImg.preserveAspect = true;
+                    rSpTr = sObj.transform;
+                }
+
+                Image rImg = rSpTr != null ? rSpTr.GetComponent<Image>() : null;
+                WeaponItem rItem = inventory != null ? inventory.EquippedRanged : null;
+
+                if (rItem != null)
+                {
+                    equippedRangedText.text = $"[TẦM XA]\n{rItem.DisplayName} Lv.{rItem.Level}";
+                    Sprite sp = WeaponSpriteService.GetWeaponItemSprite(rItem);
+                    if (rImg != null && sp != null)
+                    {
+                        rImg.sprite = sp;
+                        rImg.enabled = true;
+                    }
                 }
                 else
                 {
                     equippedRangedText.text = "[TẦM XA]\n(Trống)";
+                    if (rImg != null) rImg.enabled = false;
                 }
             }
 
-            // 3. Cập nhật 4 ô Ba lô dự trữ (Hiển thị vũ khí run HOẶC trang bị vừa nhặt được trong túi tài khoản)
+            // 3. Cập nhật 4 ô Ba lô dự trữ (Hiển thị vũ khí run HOẶC trang bị vừa nhặt được)
             if (backpackSlotTexts == null) return;
 
             var backpackWeapons = inventory != null ? inventory.Backpack : null;
@@ -142,16 +199,41 @@ namespace Apocarrot.UI
             {
                 if (backpackSlotTexts[i] == null) continue;
 
+                Image slotBg = (backpackSlotBgs != null && i < backpackSlotBgs.Length) ? backpackSlotBgs[i] : null;
+                Transform spTr = slotBg != null ? slotBg.transform.Find("SpriteImg") : null;
+                if (slotBg != null && spTr == null)
+                {
+                    GameObject sObj = new GameObject("SpriteImg");
+                    sObj.transform.SetParent(slotBg.transform, false);
+                    RectTransform sRt = sObj.AddComponent<RectTransform>();
+                    sRt.anchorMin = new Vector2(0, 0.5f);
+                    sRt.anchorMax = new Vector2(0, 0.5f);
+                    sRt.pivot = new Vector2(0, 0.5f);
+                    sRt.anchoredPosition = new Vector2(6, 0);
+                    sRt.sizeDelta = new Vector2(36, 36);
+                    Image sImg = sObj.AddComponent<Image>();
+                    sImg.preserveAspect = true;
+                    spTr = sObj.transform;
+                }
+                Image slotSprite = spTr != null ? spTr.GetComponent<Image>() : null;
+
                 // Ưu tiên 1: Vũ khí dự trữ trong Run
                 if (backpackWeapons != null && i < backpackWeapons.Count)
                 {
                     var wpn = backpackWeapons[i];
                     backpackSlotTexts[i].text = $"<b>{wpn.DisplayName}</b>\n<size=10><color=#ffff55>Lv.{wpn.Level}</color></size>";
-                    if (backpackSlotBgs != null && i < backpackSlotBgs.Length && backpackSlotBgs[i] != null)
+                    if (slotBg != null)
                     {
                         Color c = wpn.ItemColor;
                         c.a = 0.85f;
-                        backpackSlotBgs[i].color = c;
+                        slotBg.color = c;
+                    }
+
+                    Sprite sp = WeaponSpriteService.GetWeaponItemSprite(wpn);
+                    if (slotSprite != null && sp != null)
+                    {
+                        slotSprite.sprite = sp;
+                        slotSprite.enabled = true;
                     }
                 }
                 // Ưu tiên 2: Trang bị nhặt được (Giáp, Ủng, Găng, Dây chuyền, v.v.)
@@ -162,20 +244,28 @@ namespace Apocarrot.UI
                     {
                         var eq = ownedEquipments[eqIndex];
                         backpackSlotTexts[i].text = $"<b>[{eq.GetSlotIcon()}] {eq.DisplayName}</b>\n<size=10><color=#33ff88>{eq.GetPrimaryStatText()}</color></size>";
-                        if (backpackSlotBgs != null && i < backpackSlotBgs.Length && backpackSlotBgs[i] != null)
+                        if (slotBg != null)
                         {
                             Color c = eq.GetRarityColor();
                             c.a = 0.85f;
-                            backpackSlotBgs[i].color = c;
+                            slotBg.color = c;
+                        }
+
+                        Sprite sp = WeaponSpriteService.GetEquipmentSprite(eq);
+                        if (slotSprite != null && sp != null)
+                        {
+                            slotSprite.sprite = sp;
+                            slotSprite.enabled = true;
                         }
                     }
                     else
                     {
                         backpackSlotTexts[i].text = $"Ô {i + 1}\n<size=10><color=#888888>(Trống)</color></size>";
-                        if (backpackSlotBgs != null && i < backpackSlotBgs.Length && backpackSlotBgs[i] != null)
+                        if (slotBg != null)
                         {
-                            backpackSlotBgs[i].color = new Color(0.12f, 0.14f, 0.20f, 0.65f);
+                            slotBg.color = new Color(0.12f, 0.14f, 0.20f, 0.65f);
                         }
+                        if (slotSprite != null) slotSprite.enabled = false;
                     }
                 }
             }
