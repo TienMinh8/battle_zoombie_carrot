@@ -50,3 +50,4 @@ Mark each item PASS only after verifying it in Unity Play Mode or an explicitly 
 - [x] No P0 flow requires manual inspector edits while playing. (PASS - ArenaSceneBootstrap sets up scene)
 - [x] UI Ba lô & HUD Zero-Lag Optimization (PASS - Tái sử dụng thẻ UI, không rebuild khi đóng túi, zero-alloc Toast pool)
 - [x] Hiển thị rõ ràng đồ nhặt được trên HUD & Toast (PASS - Banner thông báo + Slot cập nhật lập tức)
+- [x] Tích hợp bộ ảnh vũ khí & trang bị 2D thực tế (PASS - Nạp động từ Resources/Weapons với WeaponSpriteService hiển thị trong HUD, Ba lô, Cửa hàng)
