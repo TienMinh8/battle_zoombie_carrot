@@ -55,7 +55,7 @@ namespace Apocarrot.UI
             if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P))
             {
                 // Nếu đang mở Balo thì nhường quyền cho Balo đóng trước
-                if (EquipmentBagUI.Instance != null && EquipmentBagUI.Instance.IsBagOpen)
+                if (EquipmentBagUI.Instance != null && EquipmentBagUI.Instance.IsOpen)
                 {
                     return;
                 }

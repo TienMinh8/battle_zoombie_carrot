@@ -119,6 +119,7 @@ namespace Apocarrot.UI
         private bool isDirty = false;
 
         public bool IsOpen => bagRoot != null && bagRoot.activeSelf;
+        public bool IsBagOpen => IsOpen;
 
         private void Awake()
         {
