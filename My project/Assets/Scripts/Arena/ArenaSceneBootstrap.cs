@@ -29,6 +29,20 @@ namespace Apocarrot.Arena
 
         private void Awake()
         {
+            // Khởi tạo Audio Manager nếu chưa tồn tại
+            if (FindFirstObjectByType<Apocarrot.Audio.AudioManager>() == null)
+            {
+                GameObject audioObj = new GameObject("AudioManager");
+                audioObj.AddComponent<Apocarrot.Audio.AudioManager>();
+            }
+
+            // Khởi tạo Damage Popup Manager nếu chưa tồn tại
+            if (FindFirstObjectByType<Apocarrot.UI.DamagePopupManager>() == null)
+            {
+                GameObject popupObj = new GameObject("DamagePopupManager");
+                popupObj.AddComponent<Apocarrot.UI.DamagePopupManager>();
+            }
+
             BuildArenaEnvironment();
         }
 
@@ -42,6 +56,15 @@ namespace Apocarrot.Arena
                     if (EquipmentBagUI.Instance != null)
                     {
                         EquipmentBagUI.Instance.ToggleBag();
+                    }
+                }
+
+                if (UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame ||
+                    UnityEngine.InputSystem.Keyboard.current.pKey.wasPressedThisFrame)
+                {
+                    if (PauseMenuUI.Instance != null)
+                    {
+                        PauseMenuUI.Instance.TogglePause();
                     }
                 }
             }
@@ -510,7 +533,7 @@ namespace Apocarrot.Arena
             hintText.fontSize = 13;
             hintText.alignment = TextAnchor.UpperLeft;
             hintText.color = new Color(1f, 1f, 1f, 0.85f);
-            hintText.text = "⌨️ WASD/Joystick: Di chuyển  |  ⚔️ Space/J: Cận chiến\n🏹 Tầm xa: Tự ngắm & bắn  |  🎒 Phím [B]: Mở Balo & Ghép đồ";
+            hintText.text = "⌨️ WASD/Joystick: Di chuyển  |  ⚔️ Space/J: Cận chiến\n🏹 Tầm xa: Tự ngắm & bắn  |  🎒 [B]: Mở Balo  |  ⏸ [Esc/P]: Tạm dừng";
             RectTransform hintRect = hintObj.GetComponent<RectTransform>();
             hintRect.anchorMin = new Vector2(0, 1);
             hintRect.anchorMax = new Vector2(0, 1);
@@ -933,6 +956,9 @@ namespace Apocarrot.Arena
 
             // 16. Xây dựng Màn hình Balo & Trang Bị Tổng (Survivor/Archero Meta Equipment Bag)
             BuildEquipmentBagUI(canvasObj, defaultFont);
+
+            // 17. Xây dựng Menu Tạm Dừng & Cài Đặt Âm Lượng (Pause Menu & Audio Settings)
+            BuildPauseMenuUI(canvasObj, defaultFont);
         }
 
         private void BuildIntermissionUI(GameObject canvasObj, Font defaultFont, RunInventory runInventory)
@@ -1569,8 +1595,8 @@ namespace Apocarrot.Arena
             bagBtnRect.anchorMin = new Vector2(1, 1);
             bagBtnRect.anchorMax = new Vector2(1, 1);
             bagBtnRect.pivot = new Vector2(1, 1);
-            bagBtnRect.anchoredPosition = new Vector2(-30, -112);
-            bagBtnRect.sizeDelta = new Vector2(340, 46);
+            bagBtnRect.anchoredPosition = new Vector2(-95, -112);
+            bagBtnRect.sizeDelta = new Vector2(275, 46);
 
             Image bagBtnBg = bagBtnObj.AddComponent<Image>();
             bagBtnBg.color = new Color(0.12f, 0.45f, 0.85f, 0.95f); // Xanh dương tươi sáng nổi bật
@@ -1584,17 +1610,53 @@ namespace Apocarrot.Arena
 
             Text bagBtnTxt = bagBtnTxtObj.AddComponent<Text>();
             bagBtnTxt.font = defaultFont;
-            bagBtnTxt.fontSize = 16;
+            bagBtnTxt.fontSize = 15;
             bagBtnTxt.fontStyle = FontStyle.Bold;
             bagBtnTxt.alignment = TextAnchor.MiddleCenter;
             bagBtnTxt.color = Color.white;
-            bagBtnTxt.text = "🎒 BALO & TRANG BỊ [B]";
+            bagBtnTxt.text = "🎒 BALO & ĐỒ [B]";
 
             Button bagBtn = bagBtnObj.AddComponent<Button>();
             bagBtn.onClick.AddListener(() => {
                 if (EquipmentBagUI.Instance != null)
                 {
                     EquipmentBagUI.Instance.ToggleBag();
+                }
+            });
+
+            // Nút Tạm Dừng ⏸ (Pause Button)
+            GameObject pauseBtnObj = new GameObject("Btn_Pause");
+            pauseBtnObj.transform.SetParent(canvasObj.transform, false);
+            RectTransform pauseBtnRect = pauseBtnObj.AddComponent<RectTransform>();
+            pauseBtnRect.anchorMin = new Vector2(1, 1);
+            pauseBtnRect.anchorMax = new Vector2(1, 1);
+            pauseBtnRect.pivot = new Vector2(1, 1);
+            pauseBtnRect.anchoredPosition = new Vector2(-30, -112);
+            pauseBtnRect.sizeDelta = new Vector2(55, 46);
+
+            Image pauseBtnBg = pauseBtnObj.AddComponent<Image>();
+            pauseBtnBg.color = new Color(0.18f, 0.22f, 0.32f, 0.95f);
+
+            GameObject pauseTxtObj = new GameObject("Text");
+            pauseTxtObj.transform.SetParent(pauseBtnObj.transform, false);
+            RectTransform pTxtRect = pauseTxtObj.AddComponent<RectTransform>();
+            pTxtRect.anchorMin = Vector2.zero;
+            pTxtRect.anchorMax = Vector2.one;
+            pTxtRect.sizeDelta = Vector2.zero;
+
+            Text pauseTxt = pauseTxtObj.AddComponent<Text>();
+            pauseTxt.font = defaultFont;
+            pauseTxt.fontSize = 20;
+            pauseTxt.fontStyle = FontStyle.Bold;
+            pauseTxt.alignment = TextAnchor.MiddleCenter;
+            pauseTxt.color = Color.white;
+            pauseTxt.text = "⏸";
+
+            Button pauseBtn = pauseBtnObj.AddComponent<Button>();
+            pauseBtn.onClick.AddListener(() => {
+                if (PauseMenuUI.Instance != null)
+                {
+                    PauseMenuUI.Instance.TogglePause();
                 }
             });
 
@@ -1609,7 +1671,7 @@ namespace Apocarrot.Arena
                 }
                 else
                 {
-                    bagBtnTxt.text = "🎒 BALO & TRANG BỊ [B]";
+                    bagBtnTxt.text = "🎒 BALO & ĐỒ [B]";
                     bagBtnBg.color = new Color(0.12f, 0.45f, 0.85f, 0.95f);
                 }
             }
@@ -1621,6 +1683,11 @@ namespace Apocarrot.Arena
         private void BuildEquipmentBagUI(GameObject canvasObj, Font defaultFont)
         {
             EquipmentBagUI.CreateEquipmentBagUI(canvasObj, defaultFont);
+        }
+
+        private void BuildPauseMenuUI(GameObject canvasObj, Font defaultFont)
+        {
+            PauseMenuUI.CreatePauseMenuUI(canvasObj, defaultFont);
         }
 
         private void BuildResultsScreenUI(GameObject canvasObj, Font defaultFont)

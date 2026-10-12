@@ -82,6 +82,10 @@ namespace Apocarrot.Enemies
             currentHealth = Mathf.Max(0f, currentHealth - info.Amount);
             NotifyHealthChanged();
 
+            // Hiển thị số sát thương nhảy nổi trực quan (Floating Damage Number)
+            bool isCrit = info.Amount >= 50f;
+            Apocarrot.UI.DamagePopupManager.ShowDamage(transform.position, info.Amount, isCrit);
+
             // Hit flash
             StopCoroutine(nameof(HitFlashRoutine));
             StartCoroutine(nameof(HitFlashRoutine));
@@ -117,6 +121,7 @@ namespace Apocarrot.Enemies
 
         private void Die()
         {
+            Apocarrot.Audio.AudioManager.Instance?.PlayEnemyDeath();
             OnDied?.Invoke(this);
 
             // Tắt collider để không cản trở di chuyển

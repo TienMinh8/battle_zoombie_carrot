@@ -60,6 +60,14 @@ namespace Apocarrot.Progression
             OnAccountDataChanged?.Invoke();
         }
 
+        private void Start()
+        {
+            if (currentData != null && currentData.EquippedWeapon != null)
+            {
+                SyncWeaponToRunInventory(currentData.EquippedWeapon);
+            }
+        }
+
         private void SanitizeAccountData(AccountData data)
         {
             if (data == null) return;
@@ -290,8 +298,38 @@ namespace Apocarrot.Progression
             }
 
             currentData.SetEquippedItem(item.SlotType, item);
+
+            // Đồng bộ trực tiếp vũ khí vào RunInventory và các component chiến đấu của Player
+            if (item.SlotType == EquipmentSlotType.Weapon)
+            {
+                SyncWeaponToRunInventory(item);
+            }
+
             SaveAccount();
             Debug.Log($"[AccountProgression] Đã trang bị: {item.DisplayName} ({item.GetSlotName()})");
+        }
+
+        public void SyncWeaponToRunInventory(EquipmentItem item)
+        {
+            if (item == null || RunInventory.Instance == null) return;
+
+            string id = item.TemplateId != null ? item.TemplateId.ToLower() : "";
+            if (id.Contains("tomato"))
+            {
+                RunInventory.Instance.EquipRanged(WeaponItem.CreateTomatoBlaster(item.Level));
+            }
+            else if (id.Contains("grape"))
+            {
+                RunInventory.Instance.EquipRanged(new WeaponItem("grape_splitter", "Đại Bác Nho", WeaponType.Ranged, item.Level, new Color(0.65f, 0.15f, 0.95f)));
+            }
+            else if (id.Contains("axe"))
+            {
+                RunInventory.Instance.EquipMelee(new WeaponItem("carrot_axe", "Rìu Cà Rốt", WeaponType.Melee, item.Level, new Color(1.0f, 0.45f, 0.1f)));
+            }
+            else
+            {
+                RunInventory.Instance.EquipMelee(WeaponItem.CreateCarrotBlade(item.Level));
+            }
         }
 
         public void UnequipItem(EquipmentSlotType slot)
@@ -320,6 +358,7 @@ namespace Apocarrot.Progression
 
             UpdateAchievementProgress("first_merge", 1);
             SaveAccount();
+            Apocarrot.Audio.AudioManager.Instance?.PlayMergeSuccess();
             Debug.Log($"[AccountProgression] Ghép thành công: {fusedResult.DisplayName} phẩm {fusedResult.GetRarityName()}!");
             return true;
         }

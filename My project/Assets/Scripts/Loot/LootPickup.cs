@@ -219,6 +219,7 @@ namespace Apocarrot.Loot
         private void ExecuteCollect()
         {
             isCollected = true;
+            Apocarrot.Audio.AudioManager.Instance?.PlayLootPickup();
             StartCoroutine(CollectPopRoutine());
         }
 

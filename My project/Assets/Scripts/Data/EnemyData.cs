@@ -68,9 +68,9 @@ namespace Apocarrot.Data
             var data = CreateInstance<EnemyData>();
             data.variantType = EnemyVariantType.Basic;
             data.enemyName = "Zombie Carrot (Cơ Bản)";
-            data.maxHealth = 45f;
+            data.maxHealth = 65f; // Cần 2 đòn chém chuẩn xác từ vũ khí khởi đầu
             data.moveSpeed = 2.6f;
-            data.attackDamage = 15f;
+            data.attackDamage = 12f;
             data.attackRange = 1.5f;
             data.windupDuration = 0.35f;
             data.attackCooldown = 1.2f;
@@ -93,9 +93,9 @@ namespace Apocarrot.Data
             var data = CreateInstance<EnemyData>();
             data.variantType = EnemyVariantType.Fast;
             data.enemyName = "Zombie Carrot (Tốc Độ)";
-            data.maxHealth = 24f; // Máu giấy
+            data.maxHealth = 35f; // Máu giấy, hạ nhanh bằng 1 đòn kiếm hoặc đạn cà chua
             data.moveSpeed = 4.4f; // Chạy nhanh
-            data.attackDamage = 12f; // Sát thương nhanh
+            data.attackDamage = 10f; // Sát thương nhanh
             data.attackRange = 1.35f;
             data.windupDuration = 0.22f; // Báo hiệu nhanh
             data.attackCooldown = 0.9f;
@@ -118,9 +118,9 @@ namespace Apocarrot.Data
             var data = CreateInstance<EnemyData>();
             data.variantType = EnemyVariantType.Elite;
             data.enemyName = "Zombie Carrot (Tinh Nhuệ)";
-            data.maxHealth = 130f; // Trâu bò
+            data.maxHealth = 220f; // Trâu bò, cần dồn sát thương và kết hợp vũ khí
             data.moveSpeed = 1.8f; // Chậm chạp
-            data.attackDamage = 30f; // Đòn đau
+            data.attackDamage = 25f; // Đòn đau
             data.attackRange = 1.8f;
             data.windupDuration = 0.5f;
             data.attackCooldown = 1.6f;

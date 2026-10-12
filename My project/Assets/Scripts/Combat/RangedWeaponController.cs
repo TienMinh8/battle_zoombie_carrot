@@ -118,6 +118,7 @@ namespace Apocarrot.Combat
                 }
             }
 
+            Apocarrot.Audio.AudioManager.Instance?.PlayRangedShot();
             OnWeaponFired?.Invoke(equippedWeapon, target);
         }
 
@@ -130,10 +131,11 @@ namespace Apocarrot.Combat
             if (proj != null)
             {
                 int bonusAtk = Progression.AccountProgression.Instance?.Data != null ? Progression.AccountProgression.Instance.Data.GetTotalEquipmentAttack() : 0;
+                int perPelletBonus = equippedWeapon.ProjectileCount > 1 ? Mathf.Max(1, Mathf.RoundToInt((float)bonusAtk / equippedWeapon.ProjectileCount)) : bonusAtk;
                 proj.Initialize(
                     direction,
                     equippedWeapon.ProjectileSpeed,
-                    equippedWeapon.Damage + bonusAtk,
+                    equippedWeapon.Damage + perPelletBonus,
                     gameObject,
                     equippedWeapon.ProjectileColor,
                     equippedWeapon.ProjectileScale

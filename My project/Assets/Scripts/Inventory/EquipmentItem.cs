@@ -66,28 +66,29 @@ namespace Apocarrot.Inventory
         }
 
         /// <summary>
-        /// Tổng sát thương cộng thêm từ món đồ (nhân theo Phẩm chất và Cấp độ).
+        /// Tổng sát thương cộng thêm từ món đồ (cân bằng tỉ lệ, tránh lạm phát chỉ số đột biến).
+        /// Phẩm chất: Common (1.0x), Great (1.15x), Rare (1.30x), Epic (1.45x), Legendary (1.60x).
         /// </summary>
         public int TotalAttack
         {
             get
             {
                 if (baseAttack <= 0) return 0;
-                float rarityMult = 1.0f + (int)rarity * 0.45f;
-                return Mathf.RoundToInt(baseAttack * rarityMult + (level - 1) * 8);
+                float rarityMult = 1.0f + (int)rarity * 0.15f;
+                return Mathf.RoundToInt(baseAttack * rarityMult + (level - 1) * 2);
             }
         }
 
         /// <summary>
-        /// Tổng lượng máu cộng thêm từ món đồ (nhân theo Phẩm chất và Cấp độ).
+        /// Tổng lượng máu cộng thêm từ món đồ (cân bằng tỉ lệ).
         /// </summary>
         public int TotalHealth
         {
             get
             {
                 if (baseHealth <= 0) return 0;
-                float rarityMult = 1.0f + (int)rarity * 0.45f;
-                return Mathf.RoundToInt(baseHealth * rarityMult + (level - 1) * 45);
+                float rarityMult = 1.0f + (int)rarity * 0.15f;
+                return Mathf.RoundToInt(baseHealth * rarityMult + (level - 1) * 8);
             }
         }
 
@@ -212,42 +213,42 @@ namespace Apocarrot.Inventory
         // ========================== FACTORY HELPER ==========================
         public static EquipmentItem CreateCarrotBlade(EquipmentRarity r = EquipmentRarity.Rare, int lvl = 1)
         {
-            return new EquipmentItem("wpn_carrot_blade", "Thanh Kiếm Cà Rốt", EquipmentSlotType.Weapon, r, lvl, 45, 0, "Lưỡi kiếm bén ngót từ tinh hoa củ cà rốt hoàng gia.");
+            return new EquipmentItem("wpn_carrot_blade", "Thanh Kiếm Cà Rốt", EquipmentSlotType.Weapon, r, lvl, 7, 0, "Lưỡi kiếm bén ngót từ tinh hoa củ cà rốt hoàng gia.");
         }
 
         public static EquipmentItem CreateTomatoBlaster(EquipmentRarity r = EquipmentRarity.Rare, int lvl = 1)
         {
-            return new EquipmentItem("wpn_tomato_blaster", "Súng Cà Chua Siêu Âm", EquipmentSlotType.Weapon, r, lvl, 40, 0, "Súng bắn đạn cà chua tự động ngắm mục tiêu tầm xa.");
+            return new EquipmentItem("wpn_tomato_blaster", "Súng Cà Chua Siêu Âm", EquipmentSlotType.Weapon, r, lvl, 6, 0, "Súng bắn đạn cà chua tự động ngắm mục tiêu tầm xa.");
         }
 
         public static EquipmentItem CreateGrapeCannon(EquipmentRarity r = EquipmentRarity.Great, int lvl = 1)
         {
-            return new EquipmentItem("wpn_grape_cannon", "Đại Bác Chùm Nho", EquipmentSlotType.Weapon, r, lvl, 35, 0, "Khai hỏa chùm đạn nho càn quét diện rộng.");
+            return new EquipmentItem("wpn_grape_cannon", "Đại Bác Chùm Nho", EquipmentSlotType.Weapon, r, lvl, 5, 0, "Khai hỏa chùm đạn nho càn quét diện rộng.");
         }
 
         public static EquipmentItem CreateCarrotPendant(EquipmentRarity r = EquipmentRarity.Rare, int lvl = 1)
         {
-            return new EquipmentItem("neck_carrot_pendant", "Mặt Dây Cà Rốt Ngọc", EquipmentSlotType.Necklace, r, lvl, 25, 120, "Dây chuyền cổ vật tiếp thêm linh lực và may mắn.");
+            return new EquipmentItem("neck_carrot_pendant", "Mặt Dây Cà Rốt Ngọc", EquipmentSlotType.Necklace, r, lvl, 3, 25, "Dây chuyền cổ vật tiếp thêm linh lực và may mắn.");
         }
 
         public static EquipmentItem CreateWarriorGloves(EquipmentRarity r = EquipmentRarity.Rare, int lvl = 1)
         {
-            return new EquipmentItem("glove_warrior", "Hộp Găng Cơ Giới", EquipmentSlotType.Gloves, r, lvl, 28, 80, "Găng bọc thép tăng tốc độ vung đòn và lực đánh.");
+            return new EquipmentItem("glove_warrior", "Hộp Găng Cơ Giới", EquipmentSlotType.Gloves, r, lvl, 3, 15, "Găng bọc thép tăng tốc độ vung đòn và lực đánh.");
         }
 
         public static EquipmentItem CreateRabbitVest(EquipmentRarity r = EquipmentRarity.Rare, int lvl = 1)
         {
-            return new EquipmentItem("arm_rabbit_vest", "Áo Giáp Thỏ Chiến", EquipmentSlotType.Armor, r, lvl, 0, 480, "Bộ giáp bảo hộ siêu nhẹ bảo vệ thỏ trước nanh vuốt quái vật.");
+            return new EquipmentItem("arm_rabbit_vest", "Áo Giáp Thỏ Chiến", EquipmentSlotType.Armor, r, lvl, 0, 80, "Bộ giáp bảo hộ siêu nhẹ bảo vệ thỏ trước nanh vuốt quái vật.");
         }
 
         public static EquipmentItem CreateLeatherBelt(EquipmentRarity r = EquipmentRarity.Rare, int lvl = 1)
         {
-            return new EquipmentItem("belt_leather", "Thắt Lưng Thợ Săn", EquipmentSlotType.Belt, r, lvl, 10, 260, "Đai thắt lưng bền bỉ giúp di chuyển vững vàng.");
+            return new EquipmentItem("belt_leather", "Thắt Lưng Thợ Săn", EquipmentSlotType.Belt, r, lvl, 1, 40, "Đai thắt lưng bền bỉ giúp di chuyển vững vàng.");
         }
 
         public static EquipmentItem CreateSwiftBoots(EquipmentRarity r = EquipmentRarity.Rare, int lvl = 1)
         {
-            return new EquipmentItem("boot_swift", "Ủng Chiến Cao Cổ", EquipmentSlotType.Boots, r, lvl, 12, 220, "Ủng tăng tốc giúp Thỏ lướt gió né đòn chớp nhoáng.");
+            return new EquipmentItem("boot_swift", "Ủng Chiến Cao Cổ", EquipmentSlotType.Boots, r, lvl, 1, 30, "Ủng tăng tốc giúp Thỏ lướt gió né đòn chớp nhoáng.");
         }
     }
 }

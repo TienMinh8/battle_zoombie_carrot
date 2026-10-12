@@ -122,6 +122,7 @@ namespace Apocarrot.Combat
                                 gameObject
                             );
                             damageable.TakeDamage(dmg);
+                            Apocarrot.Audio.AudioManager.Instance?.PlayMeleeHit();
 
                             // Đẩy lùi kẻ địch nếu có Rigidbody hoặc CharacterController
                             Rigidbody rb = col.attachedRigidbody;
@@ -134,8 +135,9 @@ namespace Apocarrot.Combat
                 }
             }
 
-            // 2. Hiển thị vệt chém trực quan (Visual Slash Arc)
+            // 2. Hiển thị vệt chém trực quan (Visual Slash Arc) & Phát âm thanh vung kiếm
             ShowSlashArc();
+            Apocarrot.Audio.AudioManager.Instance?.PlayMeleeSwing();
 
             OnAttackExecuted?.Invoke(equippedWeapon);
             return true;

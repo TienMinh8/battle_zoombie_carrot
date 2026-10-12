@@ -222,6 +222,7 @@ namespace Apocarrot.Enemies
             }
 
             LootToastManager.ShowWorldToast(transform.position + Vector3.up * 3.8f, "⚠️ NÉ ĐÒN DẬM ĐẤT!", new Color(1f, 0.85f, 0.2f));
+            Apocarrot.Audio.AudioManager.Instance?.PlayBossTelegraph();
 
             // Boss nhảy lên nhẹ / nhún gồng mình tích năng lượng
             float elapsed = 0f;
@@ -258,6 +259,10 @@ namespace Apocarrot.Enemies
             {
                 telegraphDisc.SetActive(false);
             }
+
+            // Phát âm thanh dậm đất uy lực và Rung chấn Camera!
+            Apocarrot.Audio.AudioManager.Instance?.PlayBossSlamImpact();
+            Apocarrot.Cameras.TopDownFollowCamera.Shake(0.35f, 0.5f);
 
             // Gây sát thương AoE cho người chơi nếu đứng trong bán kính
             if (playerTarget != null)
@@ -413,7 +418,7 @@ namespace Apocarrot.Enemies
             cc.center = new Vector3(0, 0.9f * scale, 0);
 
             EnemyHealth bossHealth = boss.AddComponent<EnemyHealth>();
-            bossHealth.SetMaxHealth(480f); // 480 HP
+            bossHealth.SetMaxHealth(1200f); // 1200 HP: boss trận chiến lớn, thử thách 35-45 giây né đòn và dồn sát thương!
 
             KingCarrotBossAI bossAI = boss.AddComponent<KingCarrotBossAI>();
 

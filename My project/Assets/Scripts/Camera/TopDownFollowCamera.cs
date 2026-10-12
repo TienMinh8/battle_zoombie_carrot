@@ -23,12 +23,21 @@ namespace Apocarrot.Cameras
         [Tooltip("Thời gian làm mượt chuyển động của camera (giây)")]
         [SerializeField] private float smoothTime = 0.15f;
 
+        public static TopDownFollowCamera Instance { get; private set; }
+
         private Vector3 currentVelocity;
+        private float shakeDuration = 0f;
+        private float shakeIntensity = 0f;
 
         public Transform Target
         {
             get => target;
             set => target = value;
+        }
+
+        private void Awake()
+        {
+            Instance = this;
         }
 
         private void Start()
@@ -41,11 +50,38 @@ namespace Apocarrot.Cameras
             }
         }
 
+        public static void Shake(float duration = 0.22f, float intensity = 0.35f)
+        {
+            if (Instance != null)
+            {
+                Instance.TriggerShake(duration, intensity);
+            }
+        }
+
+        public void TriggerShake(float duration, float intensity)
+        {
+            shakeDuration = Mathf.Max(shakeDuration, duration);
+            shakeIntensity = Mathf.Max(shakeIntensity, intensity);
+        }
+
         private void LateUpdate()
         {
             if (target == null) return;
 
             Vector3 targetPosition = target.position + offset;
+
+            // Thêm rung chấn Camera Shake
+            if (shakeDuration > 0f)
+            {
+                shakeDuration -= Time.deltaTime;
+                Vector3 shakeOffset = new Vector3(
+                    Random.Range(-1f, 1f),
+                    Random.Range(-0.5f, 0.5f),
+                    Random.Range(-1f, 1f)
+                ) * shakeIntensity * Mathf.Clamp01(shakeDuration / 0.2f);
+                targetPosition += shakeOffset;
+            }
+
             transform.position = Vector3.SmoothDamp(
                 transform.position,
                 targetPosition,

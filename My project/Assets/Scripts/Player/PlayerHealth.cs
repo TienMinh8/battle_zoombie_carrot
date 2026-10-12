@@ -132,6 +132,10 @@ namespace Apocarrot.Gameplay
             currentHealth = Mathf.Max(0f, currentHealth - info.Amount);
             NotifyHealthChanged();
 
+            // Âm thanh Thỏ bị đau & rung camera nhẹ
+            Apocarrot.Audio.AudioManager.Instance?.PlayPlayerHurt();
+            Apocarrot.Cameras.TopDownFollowCamera.Shake(0.15f, 0.25f);
+
             // Hiệu ứng chớp đỏ khi bị đánh trúng
             StartCoroutine(FlashRedRoutine());
 

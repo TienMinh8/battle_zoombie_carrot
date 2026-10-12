@@ -189,10 +189,9 @@ namespace Apocarrot.UI
                 }
             }
 
-            // 3. Cập nhật 4 ô Ba lô dự trữ (Hiển thị vũ khí run HOẶC trang bị vừa nhặt được)
+            // 3. Cập nhật 4 ô Ba lô dự trữ (Đồng bộ trực tiếp 100% với danh sách món đồ trong Balo tài khoản)
             if (backpackSlotTexts == null) return;
 
-            var backpackWeapons = inventory != null ? inventory.Backpack : null;
             var ownedEquipments = AccountProgression.Instance?.Data?.OwnedEquipments;
 
             for (int i = 0; i < backpackSlotTexts.Length; i++)
@@ -217,56 +216,32 @@ namespace Apocarrot.UI
                 }
                 Image slotSprite = spTr != null ? spTr.GetComponent<Image>() : null;
 
-                // Ưu tiên 1: Vũ khí dự trữ trong Run
-                if (backpackWeapons != null && i < backpackWeapons.Count)
+                if (ownedEquipments != null && i < ownedEquipments.Count)
                 {
-                    var wpn = backpackWeapons[i];
-                    backpackSlotTexts[i].text = $"<b>{wpn.DisplayName}</b>\n<size=10><color=#ffff55>Lv.{wpn.Level}</color></size>";
+                    var eq = ownedEquipments[i];
+                    backpackSlotTexts[i].text = $"<b>[{eq.GetSlotIcon()}] {eq.DisplayName}</b>\n<size=10><color=#33ff88>{eq.GetPrimaryStatText()}</color></size>";
                     if (slotBg != null)
                     {
-                        Color c = wpn.ItemColor;
+                        Color c = eq.GetRarityColor();
                         c.a = 0.85f;
                         slotBg.color = c;
                     }
 
-                    Sprite sp = WeaponSpriteService.GetWeaponItemSprite(wpn);
+                    Sprite sp = WeaponSpriteService.GetEquipmentSprite(eq);
                     if (slotSprite != null && sp != null)
                     {
                         slotSprite.sprite = sp;
                         slotSprite.enabled = true;
                     }
                 }
-                // Ưu tiên 2: Trang bị nhặt được (Giáp, Ủng, Găng, Dây chuyền, v.v.)
                 else
                 {
-                    int eqIndex = i - (backpackWeapons != null ? backpackWeapons.Count : 0);
-                    if (ownedEquipments != null && eqIndex >= 0 && eqIndex < ownedEquipments.Count)
+                    backpackSlotTexts[i].text = $"Ô {i + 1}\n<size=10><color=#888888>(Trống)</color></size>";
+                    if (slotBg != null)
                     {
-                        var eq = ownedEquipments[eqIndex];
-                        backpackSlotTexts[i].text = $"<b>[{eq.GetSlotIcon()}] {eq.DisplayName}</b>\n<size=10><color=#33ff88>{eq.GetPrimaryStatText()}</color></size>";
-                        if (slotBg != null)
-                        {
-                            Color c = eq.GetRarityColor();
-                            c.a = 0.85f;
-                            slotBg.color = c;
-                        }
-
-                        Sprite sp = WeaponSpriteService.GetEquipmentSprite(eq);
-                        if (slotSprite != null && sp != null)
-                        {
-                            slotSprite.sprite = sp;
-                            slotSprite.enabled = true;
-                        }
+                        slotBg.color = new Color(0.12f, 0.14f, 0.20f, 0.65f);
                     }
-                    else
-                    {
-                        backpackSlotTexts[i].text = $"Ô {i + 1}\n<size=10><color=#888888>(Trống)</color></size>";
-                        if (slotBg != null)
-                        {
-                            slotBg.color = new Color(0.12f, 0.14f, 0.20f, 0.65f);
-                        }
-                        if (slotSprite != null) slotSprite.enabled = false;
-                    }
+                    if (slotSprite != null) slotSprite.enabled = false;
                 }
             }
         }
