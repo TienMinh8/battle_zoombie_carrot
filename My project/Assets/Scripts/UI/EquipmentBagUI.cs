@@ -83,6 +83,10 @@ namespace Apocarrot.UI
         [SerializeField] private Text detailEquipButtonText;
         [SerializeField] private Button detailCloseButton;
 
+        [Header("Notice Banner")]
+        [SerializeField] private Text bagNoticeText;
+        private Coroutine hideNoticeCoroutine;
+
         [Header("Fuse Modal")]
         [SerializeField] private GameObject fuseModalRoot;
         [SerializeField] private Text fuseModalNotice;
@@ -361,6 +365,11 @@ namespace Apocarrot.UI
         private void UpdateSlotButton(Button btn, EquipmentItem item, EquipmentSlotType slot)
         {
             if (btn == null) return;
+
+            UIDragDropItem dragDrop = btn.GetComponent<UIDragDropItem>();
+            if (dragDrop == null) dragDrop = btn.gameObject.AddComponent<UIDragDropItem>();
+            dragDrop.BindEquippedSlot(slot, item);
+
             Transform itemIconTr = btn.transform.Find("ItemIcon");
             Transform levelBadgeTr = btn.transform.Find("LevelText");
             Transform slotBadgeTr = btn.transform.Find("SlotBadge");
@@ -512,6 +521,10 @@ namespace Apocarrot.UI
             cardTr.gameObject.SetActive(true);
             cardTr.name = $"Item_{item.Uid}";
 
+            UIDragDropItem dragDrop = cardTr.GetComponent<UIDragDropItem>();
+            if (dragDrop == null) dragDrop = cardTr.gameObject.AddComponent<UIDragDropItem>();
+            dragDrop.BindBagItem(item);
+
             Image bg = cardTr.GetComponent<Image>();
             if (bg != null) bg.color = item.GetRarityColor();
 
@@ -615,6 +628,9 @@ namespace Apocarrot.UI
 
             Image bg = cardObj.AddComponent<Image>();
             bg.color = item.GetRarityColor();
+
+            UIDragDropItem dragDrop = cardObj.AddComponent<UIDragDropItem>();
+            dragDrop.BindBagItem(item);
 
             GameObject innerObj = new GameObject("Inner");
             innerObj.transform.SetParent(cardObj.transform, false);
@@ -977,7 +993,7 @@ namespace Apocarrot.UI
             }
         }
 
-        private void OpenBagItemDetail(EquipmentItem item)
+        public void OpenBagItemDetail(EquipmentItem item)
         {
             if (item == null) return;
             if (recentlyCollectedUids.Remove(item.Uid))
@@ -995,7 +1011,7 @@ namespace Apocarrot.UI
             ShowDetailModal();
         }
 
-        private void OpenEquippedDetail(EquipmentSlotType slot)
+        public void OpenEquippedDetail(EquipmentSlotType slot)
         {
             var acc = AccountProgression.Instance?.Data;
             if (acc == null) return;
@@ -1007,6 +1023,97 @@ namespace Apocarrot.UI
             isSelectedEquipped = true;
             selectedSlotType = slot;
             ShowDetailModal();
+        }
+
+        // ========================== CÁC PHƯƠNG THỨC KÉO - THẢ (DRAG & DROP) ==========================
+        public void HandleDropOnSlot(EquipmentItem draggedItem, EquipmentSlotType targetSlot)
+        {
+            if (draggedItem == null) return;
+
+            if (draggedItem.SlotType != targetSlot)
+            {
+                ShowBagNotice($"⚠️ Không thể trang bị vào ô này! (Cần {draggedItem.GetSlotName()})", new Color(1f, 0.45f, 0.45f));
+                return;
+            }
+
+            if (AccountProgression.Instance != null)
+            {
+                AccountProgression.Instance.EquipItem(draggedItem);
+                ShowBagNotice($"⚔️ ĐÃ TRANG BỊ: {draggedItem.DisplayName}!", new Color(0.3f, 1f, 0.5f));
+                RefreshAll();
+            }
+        }
+
+        public void HandleDropOnBagItem(EquipmentItem itemA, EquipmentItem itemB)
+        {
+            if (itemA == null || itemB == null || itemA.Uid == itemB.Uid) return;
+
+            if (itemA.CanFuseWith(itemB))
+            {
+                if (AccountProgression.Instance != null)
+                {
+                    if (AccountProgression.Instance.FuseItems(itemA, itemB, out EquipmentItem fusedResult))
+                    {
+                        ShowBagNotice($"✨ GHÉP NÂNG CẤP THÀNH CÔNG: {fusedResult.DisplayName} ({fusedResult.GetRarityName()})!", new Color(1f, 0.85f, 0.2f));
+                        RefreshAll();
+                    }
+                }
+            }
+            else
+            {
+                if (itemA.TemplateId != itemB.TemplateId)
+                {
+                    ShowBagNotice("⚠️ Hai món đồ phải cùng loại mới ghép được!", new Color(1f, 0.45f, 0.45f));
+                }
+                else if (itemA.Rarity != itemB.Rarity)
+                {
+                    ShowBagNotice("⚠️ Hai món đồ phải cùng phẩm chất mới ghép được!", new Color(1f, 0.45f, 0.45f));
+                }
+                else if (itemA.Rarity >= EquipmentRarity.Legendary)
+                {
+                    ShowBagNotice("⚠️ Trang bị đã đạt phẩm chất tối đa!", new Color(1f, 0.45f, 0.45f));
+                }
+                else
+                {
+                    ShowBagNotice("⚠️ Không thể ghép 2 món đồ này!", new Color(1f, 0.45f, 0.45f));
+                }
+            }
+        }
+
+        public void HandleUnequipSlot(EquipmentSlotType slot)
+        {
+            if (AccountProgression.Instance != null)
+            {
+                var item = AccountProgression.Instance.Data?.GetEquippedItem(slot);
+                if (item != null)
+                {
+                    AccountProgression.Instance.UnequipItem(slot);
+                    ShowBagNotice($"Đã tháo {item.DisplayName} về Ba lô!", new Color(0.8f, 0.9f, 1f));
+                    RefreshAll();
+                }
+            }
+        }
+
+        public void ShowBagNotice(string message, Color? color = null)
+        {
+            if (bagNoticeText != null)
+            {
+                bagNoticeText.text = message;
+                bagNoticeText.color = color ?? Color.white;
+                bagNoticeText.gameObject.SetActive(true);
+
+                if (hideNoticeCoroutine != null) StopCoroutine(hideNoticeCoroutine);
+                hideNoticeCoroutine = StartCoroutine(HideNoticeRoutine());
+            }
+        }
+
+        private System.Collections.IEnumerator HideNoticeRoutine()
+        {
+            yield return new WaitForSeconds(3.5f);
+            if (bagNoticeText != null)
+            {
+                bagNoticeText.gameObject.SetActive(false);
+            }
         }
 
         private void ShowDetailModal()
@@ -1171,14 +1278,17 @@ namespace Apocarrot.UI
             heroSecRt.anchorMax = new Vector2(1, 1);
             heroSecRt.pivot = new Vector2(0.5f, 1);
             heroSecRt.anchoredPosition = new Vector2(0, -70);
-            heroSecRt.sizeDelta = new Vector2(0, 390);
+            heroSecRt.sizeDelta = new Vector2(0, 340);
 
             // Stage Center
             GameObject stageObj = new GameObject("Center_Stage");
             stageObj.transform.SetParent(heroSection.transform, false);
             RectTransform stageRt = stageObj.AddComponent<RectTransform>();
-            stageRt.anchoredPosition = new Vector2(0, -20);
-            stageRt.sizeDelta = new Vector2(340, 330);
+            stageRt.anchorMin = new Vector2(0.5f, 1f);
+            stageRt.anchorMax = new Vector2(0.5f, 1f);
+            stageRt.pivot = new Vector2(0.5f, 1f);
+            stageRt.anchoredPosition = new Vector2(0, -15);
+            stageRt.sizeDelta = new Vector2(320, 230);
             Image stageBg = stageObj.AddComponent<Image>();
             stageBg.color = new Color(0.12f, 0.18f, 0.28f, 0.5f);
 
@@ -1186,11 +1296,14 @@ namespace Apocarrot.UI
             GameObject heroNameObj = new GameObject("HeroName");
             heroNameObj.transform.SetParent(stageObj.transform, false);
             RectTransform hnRt = heroNameObj.AddComponent<RectTransform>();
-            hnRt.anchoredPosition = new Vector2(0, 135);
-            hnRt.sizeDelta = new Vector2(360, 30);
+            hnRt.anchorMin = new Vector2(0.5f, 1f);
+            hnRt.anchorMax = new Vector2(0.5f, 1f);
+            hnRt.pivot = new Vector2(0.5f, 1f);
+            hnRt.anchoredPosition = new Vector2(0, -10);
+            hnRt.sizeDelta = new Vector2(300, 26);
             Text hnTxt = heroNameObj.AddComponent<Text>();
             hnTxt.font = defaultFont;
-            hnTxt.fontSize = 18;
+            hnTxt.fontSize = 17;
             hnTxt.fontStyle = FontStyle.Bold;
             hnTxt.alignment = TextAnchor.MiddleCenter;
             hnTxt.color = Color.white;
@@ -1200,8 +1313,11 @@ namespace Apocarrot.UI
             GameObject heroVisualObj = new GameObject("HeroVisual");
             heroVisualObj.transform.SetParent(stageObj.transform, false);
             RectTransform hvRt = heroVisualObj.AddComponent<RectTransform>();
-            hvRt.anchoredPosition = new Vector2(0, 20);
-            hvRt.sizeDelta = new Vector2(200, 140);
+            hvRt.anchorMin = new Vector2(0.5f, 1f);
+            hvRt.anchorMax = new Vector2(0.5f, 1f);
+            hvRt.pivot = new Vector2(0.5f, 1f);
+            hvRt.anchoredPosition = new Vector2(0, -42);
+            hvRt.sizeDelta = new Vector2(210, 120);
             Image hvBg = heroVisualObj.AddComponent<Image>();
             hvBg.color = new Color(0.15f, 0.22f, 0.38f, 0.85f);
 
@@ -1213,33 +1329,58 @@ namespace Apocarrot.UI
             hvtRt.sizeDelta = Vector2.zero;
             Text hvTxt = hvTxtObj.AddComponent<Text>();
             hvTxt.font = defaultFont;
-            hvTxt.fontSize = 17;
+            hvTxt.fontSize = 16;
             hvTxt.fontStyle = FontStyle.Bold;
             hvTxt.alignment = TextAnchor.MiddleCenter;
             hvTxt.color = Color.white;
             hvTxt.text = "★ THỎ CHIẾN BINH ★\n<size=12><color=#66ddff>Đấu Sĩ Sinh Tồn Cà Rốt</color></size>";
 
             // Nút Xoay 🔄
-            GameObject rotBtnObj = CreateButton(stageObj, new Vector2(0, -80), new Vector2(50, 44), new Color(0.2f, 0.5f, 0.9f), "XOAY", defaultFont, 14);
+            GameObject rotBtnObj = CreateButton(stageObj, new Vector2(0, 0), new Vector2(70, 32), new Color(0.2f, 0.5f, 0.9f), "XOAY", defaultFont, 13);
+            RectTransform rotRt = rotBtnObj.GetComponent<RectTransform>();
+            rotRt.anchorMin = new Vector2(0.5f, 0f);
+            rotRt.anchorMax = new Vector2(0.5f, 0f);
+            rotRt.pivot = new Vector2(0.5f, 0f);
+            rotRt.anchoredPosition = new Vector2(0, 10);
 
             // Bảng chỉ số ATK & HP dưới chân Thỏ
             GameObject statBar = new GameObject("Stat_Bar");
             statBar.transform.SetParent(heroSection.transform, false);
             RectTransform sbRt = statBar.AddComponent<RectTransform>();
-            sbRt.anchoredPosition = new Vector2(0, -355);
-            sbRt.sizeDelta = new Vector2(380, 44);
+            sbRt.anchorMin = new Vector2(0.5f, 1f);
+            sbRt.anchorMax = new Vector2(0.5f, 1f);
+            sbRt.pivot = new Vector2(0.5f, 1f);
+            sbRt.anchoredPosition = new Vector2(0, -260);
+            sbRt.sizeDelta = new Vector2(360, 42);
 
-            CreateResourcePill(statBar, new Vector2(-100, 0), new Vector2(170, 40), new Color(0.22f, 0.14f, 0.14f), "ATK: 137", out Text atkTxt, defaultFont);
-            CreateResourcePill(statBar, new Vector2(100, 0), new Vector2(170, 40), new Color(0.12f, 0.24f, 0.14f), "HP: 1572", out Text hpTxt, defaultFont);
+            CreateResourcePill(statBar, new Vector2(-95, 0), new Vector2(165, 38), new Color(0.22f, 0.14f, 0.14f), "ATK: 137", out Text atkTxt, defaultFont);
+            CreateResourcePill(statBar, new Vector2(95, 0), new Vector2(165, 38), new Color(0.12f, 0.24f, 0.14f), "HP: 1572", out Text hpTxt, defaultFont);
 
             // 6 Ô Trang Bị
-            Button wpnBtn = CreateEquipmentSlotUI(heroSection, new Vector2(-300, -55), "KIẾM", "Vũ Khí", defaultFont);
-            Button neckBtn = CreateEquipmentSlotUI(heroSection, new Vector2(-300, -170), "DÂY", "Dây Chuyền", defaultFont);
-            Button gloveBtn = CreateEquipmentSlotUI(heroSection, new Vector2(-300, -285), "GĂNG", "Găng Tay", defaultFont);
+            Button wpnBtn = CreateEquipmentSlotUI(heroSection, new Vector2(-310, -15), "KIẾM", "Vũ Khí", defaultFont, EquipmentSlotType.Weapon);
+            Button neckBtn = CreateEquipmentSlotUI(heroSection, new Vector2(-310, -125), "DÂY", "Dây Chuyền", defaultFont, EquipmentSlotType.Necklace);
+            Button gloveBtn = CreateEquipmentSlotUI(heroSection, new Vector2(-310, -235), "GĂNG", "Găng Tay", defaultFont, EquipmentSlotType.Gloves);
 
-            Button armBtn = CreateEquipmentSlotUI(heroSection, new Vector2(300, -55), "GIÁP", "Áo Giáp", defaultFont);
-            Button beltBtn = CreateEquipmentSlotUI(heroSection, new Vector2(300, -170), "ĐAI", "Thắt Lưng", defaultFont);
-            Button bootBtn = CreateEquipmentSlotUI(heroSection, new Vector2(300, -285), "ỦNG", "Ủng Chiến", defaultFont);
+            Button armBtn = CreateEquipmentSlotUI(heroSection, new Vector2(310, -15), "GIÁP", "Áo Giáp", defaultFont, EquipmentSlotType.Armor);
+            Button beltBtn = CreateEquipmentSlotUI(heroSection, new Vector2(310, -125), "ĐAI", "Thắt Lưng", defaultFont, EquipmentSlotType.Belt);
+            Button bootBtn = CreateEquipmentSlotUI(heroSection, new Vector2(310, -235), "ỦNG", "Ủng Chiến", defaultFont, EquipmentSlotType.Boots);
+
+            // Dải thông báo phản hồi thao tác kéo thả (Notice Pill)
+            GameObject noticeObj = new GameObject("Bag_Notice_Banner");
+            noticeObj.transform.SetParent(contentPanel.transform, false);
+            RectTransform nrt = noticeObj.AddComponent<RectTransform>();
+            nrt.anchorMin = new Vector2(0.5f, 1f);
+            nrt.anchorMax = new Vector2(0.5f, 1f);
+            nrt.pivot = new Vector2(0.5f, 1f);
+            nrt.anchoredPosition = new Vector2(0, -418);
+            nrt.sizeDelta = new Vector2(620, 26);
+            Text nTxt = noticeObj.AddComponent<Text>();
+            nTxt.font = defaultFont;
+            nTxt.fontSize = 13;
+            nTxt.fontStyle = FontStyle.Bold;
+            nTxt.alignment = TextAnchor.MiddleCenter;
+            nTxt.color = new Color(1f, 0.9f, 0.4f);
+            nTxt.text = "💡 Kéo đồ lên ô để Trang Bị • Kéo 2 món đồ đè nhau để Ghép Nâng Cấp!";
 
             // ------------------ 3. MID ACTION BAR TABS ------------------
             GameObject midBar = new GameObject("MidBar");
@@ -1248,19 +1389,19 @@ namespace Apocarrot.UI
             mbRt.anchorMin = new Vector2(0, 1);
             mbRt.anchorMax = new Vector2(1, 1);
             mbRt.pivot = new Vector2(0.5f, 1);
-            mbRt.anchoredPosition = new Vector2(0, -480);
-            mbRt.sizeDelta = new Vector2(0, 50);
+            mbRt.anchoredPosition = new Vector2(0, -446);
+            mbRt.sizeDelta = new Vector2(0, 48);
 
             // Tab 1: Trang Bị & Balo
-            GameObject tabBagObj = CreateButton(midBar, new Vector2(-240, 0), new Vector2(210, 44), new Color(0.18f, 0.45f, 0.85f), "🎒 Trang Bị (Bag)", defaultFont, 16);
+            GameObject tabBagObj = CreateButton(midBar, new Vector2(-240, 0), new Vector2(210, 42), new Color(0.18f, 0.45f, 0.85f), "🎒 Trang Bị (Bag)", defaultFont, 16);
             Text tBagTxt = tabBagObj.GetComponentInChildren<Text>();
 
             // Tab 2: Cửa Hàng Run Shop
-            GameObject tabShopObj = CreateButton(midBar, new Vector2(0, 0), new Vector2(210, 44), new Color(0.12f, 0.16f, 0.24f), "🛒 Cửa Hàng (Shop)", defaultFont, 16);
+            GameObject tabShopObj = CreateButton(midBar, new Vector2(0, 0), new Vector2(210, 42), new Color(0.12f, 0.16f, 0.24f), "🛒 Cửa Hàng (Shop)", defaultFont, 16);
             Text tShopTxt = tabShopObj.GetComponentInChildren<Text>();
 
             // Nút Fuse
-            GameObject fuseBtnObj = CreateButton(midBar, new Vector2(260, 0), new Vector2(180, 44), new Color(0.95f, 0.65f, 0.1f), "✨ Fuse (Ghép)", defaultFont, 16);
+            GameObject fuseBtnObj = CreateButton(midBar, new Vector2(260, 0), new Vector2(180, 42), new Color(0.95f, 0.65f, 0.1f), "✨ Fuse (Ghép)", defaultFont, 16);
 
             // ------------------ 4. SCROLL CONTAINERS (BAG GRID & SHOP) ------------------
             // 4A. Bag Grid Scroll
@@ -1270,8 +1411,8 @@ namespace Apocarrot.UI
             bsRt.anchorMin = new Vector2(0, 1);
             bsRt.anchorMax = new Vector2(1, 1);
             bsRt.pivot = new Vector2(0.5f, 1);
-            bsRt.anchoredPosition = new Vector2(0, -540);
-            bsRt.sizeDelta = new Vector2(0, 360);
+            bsRt.anchoredPosition = new Vector2(0, -500);
+            bsRt.sizeDelta = new Vector2(0, 426);
 
             ScrollRect bagScroll = bagScrollObj.AddComponent<ScrollRect>();
             bagScroll.horizontal = false;
@@ -1309,8 +1450,8 @@ namespace Apocarrot.UI
             ssRt.anchorMin = new Vector2(0, 1);
             ssRt.anchorMax = new Vector2(1, 1);
             ssRt.pivot = new Vector2(0.5f, 1);
-            ssRt.anchoredPosition = new Vector2(0, -540);
-            ssRt.sizeDelta = new Vector2(0, 360);
+            ssRt.anchoredPosition = new Vector2(0, -500);
+            ssRt.sizeDelta = new Vector2(0, 426);
 
             ScrollRect shopScroll = shopScrollObj.AddComponent<ScrollRect>();
             shopScroll.horizontal = false;
@@ -1351,9 +1492,9 @@ namespace Apocarrot.UI
             fbRt.anchorMax = new Vector2(1, 0);
             fbRt.pivot = new Vector2(0.5f, 0);
             fbRt.anchoredPosition = new Vector2(0, 15);
-            fbRt.sizeDelta = new Vector2(0, 75);
+            fbRt.sizeDelta = new Vector2(0, 68);
 
-            GameObject contBtnObj = CreateButton(footerBar, new Vector2(0, 0), new Vector2(620, 64), new Color(0.18f, 0.78f, 0.35f), "▶ TIẾP TỤC CHIẾN ĐẤU ◀", defaultFont, 22);
+            GameObject contBtnObj = CreateButton(footerBar, new Vector2(0, 0), new Vector2(620, 60), new Color(0.18f, 0.78f, 0.35f), "▶ TIẾP TỤC CHIẾN ĐẤU ◀", defaultFont, 21);
             Text contTxt = contBtnObj.GetComponentInChildren<Text>();
 
             // ------------------ 6. MODALS ------------------
@@ -1399,6 +1540,8 @@ namespace Apocarrot.UI
             ui.continueActionButton = contBtnObj.GetComponent<Button>();
             ui.continueActionText = contTxt;
 
+            ui.bagNoticeText = nTxt;
+
             ui.detailModalRoot = detailModal;
             ui.detailItemName = dName;
             ui.detailItemRarity = dRarity;
@@ -1416,16 +1559,22 @@ namespace Apocarrot.UI
             return ui;
         }
 
-        private static Button CreateEquipmentSlotUI(GameObject parent, Vector2 pos, string defaultIcon, string slotName, Font font)
+        private static Button CreateEquipmentSlotUI(GameObject parent, Vector2 pos, string defaultIcon, string slotName, Font font, EquipmentSlotType slotType)
         {
             GameObject slotObj = new GameObject($"Slot_{slotName}");
             slotObj.transform.SetParent(parent.transform, false);
             RectTransform rt = slotObj.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 1f);
+            rt.anchorMax = new Vector2(0.5f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
             rt.anchoredPosition = pos;
-            rt.sizeDelta = new Vector2(105, 105);
+            rt.sizeDelta = new Vector2(98, 98);
 
             Image bg = slotObj.AddComponent<Image>();
             bg.color = new Color(0.12f, 0.45f, 0.85f);
+
+            UIDragDropItem dragDrop = slotObj.AddComponent<UIDragDropItem>();
+            dragDrop.BindEquippedSlot(slotType, null);
 
             GameObject inner = new GameObject("Inner");
             inner.transform.SetParent(slotObj.transform, false);
