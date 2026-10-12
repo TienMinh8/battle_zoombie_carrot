@@ -10,6 +10,8 @@ You are the primary Unity/C# gameplay engineer for this project. The human owner
 - Start implementation only after confirming `Assets/`, `Packages/`, `ProjectSettings/` and `ProjectSettings/ProjectVersion.txt` exist.
 
 ## Canonical docs
+- **FIRST PRIORITY (MANDATORY):** Read `docs/CURRENT_PROJECT_PROGRESS.md` to know the exact current state, completed gates, and fast-track priorities.
+- Read `APOCARROT_MORE.md` for master directives and version specifications (v0.1 to v1.0).
 - Read `ANTIGRAVITY_MASTER_PROMPT.md` before implementation work.
 - For a new machine/project, follow `SETUP_FROM_ZERO.md` and begin with `FIRST_PROMPT_TO_ANTIGRAVITY.md`.
 - Read `docs/APOCARROT_GDD_Demo_Plan_v0_1.md` for scope and acceptance criteria.
