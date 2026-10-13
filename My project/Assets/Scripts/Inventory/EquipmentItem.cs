@@ -94,6 +94,15 @@ namespace Apocarrot.Inventory
             }
         }
 
+        public int AttackBonus => baseAttack;
+        public int HealthBonus => baseHealth;
+        public int ArmorBonus => slotType == EquipmentSlotType.Armor || slotType == EquipmentSlotType.Belt ? Mathf.RoundToInt(TotalHealth * 0.05f) : 0;
+        public float AttackSpeedBonus => slotType == EquipmentSlotType.Gloves ? 0.10f : 0f;
+        public float MoveSpeedBonus => slotType == EquipmentSlotType.Boots ? 0.10f : 0f;
+
+        public int GetTotalAttackBonus() => TotalAttack;
+        public int GetTotalHealthBonus() => TotalHealth;
+
         public Color GetRarityColor()
         {
             switch (rarity)
