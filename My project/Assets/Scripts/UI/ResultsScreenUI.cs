@@ -36,10 +36,16 @@ namespace Apocarrot.UI
         [SerializeField] private Text rogueliteNoticeText;
 
         [Header("Actions")]
+        [SerializeField] private Button openChestButton;
+        [SerializeField] private Text openChestButtonText;
+        [SerializeField] private Button homeButton;
         [SerializeField] private Button playAgainButton;
         [SerializeField] private Button resetProgressionButton;
 
         public event Action OnPlayAgainRequested;
+        public event Action OnReturnToHomeRequested;
+
+        private bool hasClaimedVictoryChest = false;
 
         private void Awake()
         {
@@ -56,6 +62,16 @@ namespace Apocarrot.UI
                 playAgainButton.onClick.AddListener(HandlePlayAgain);
             }
 
+            if (homeButton != null)
+            {
+                homeButton.onClick.AddListener(HandleReturnToHome);
+            }
+
+            if (openChestButton != null)
+            {
+                openChestButton.onClick.AddListener(HandleOpenVictoryChest);
+            }
+
             if (resetProgressionButton != null)
             {
                 resetProgressionButton.onClick.AddListener(HandleResetProgression);
@@ -69,7 +85,10 @@ namespace Apocarrot.UI
             Text rabbitLevelTxt, Text xpTxt, Image xpFill, Text rewardTxt,
             Text rogueliteNotice,
             Button playAgainBtn,
-            Button resetProgressionBtn)
+            Button resetProgressionBtn,
+            Button returnHomeBtn = null,
+            Button victoryChestBtn = null,
+            Text victoryChestTxt = null)
         {
             overlayRoot = root;
             outcomeTitleText = outcomeTitle;
@@ -83,11 +102,26 @@ namespace Apocarrot.UI
             rogueliteNoticeText = rogueliteNotice;
             playAgainButton = playAgainBtn;
             resetProgressionButton = resetProgressionBtn;
+            homeButton = returnHomeBtn;
+            openChestButton = victoryChestBtn;
+            openChestButtonText = victoryChestTxt;
 
             if (playAgainButton != null)
             {
                 playAgainButton.onClick.RemoveAllListeners();
                 playAgainButton.onClick.AddListener(HandlePlayAgain);
+            }
+
+            if (homeButton != null)
+            {
+                homeButton.onClick.RemoveAllListeners();
+                homeButton.onClick.AddListener(HandleReturnToHome);
+            }
+
+            if (openChestButton != null)
+            {
+                openChestButton.onClick.RemoveAllListeners();
+                openChestButton.onClick.AddListener(HandleOpenVictoryChest);
             }
 
             if (resetProgressionButton != null)
@@ -211,6 +245,59 @@ namespace Apocarrot.UI
                     "🛡️ QUY TẮC ROGUELITE: Vũ khí & vàng nhặt trong trận đã được reset.\n" +
                     "Cấp thỏ, XP và Thành tựu tài khoản được LƯU CỤC BỘ VĨNH VIỄN không bị mất!";
             }
+
+            // 5. Cấu hình Nút Mở Rương Thưởng
+            hasClaimedVictoryChest = false;
+            if (openChestButton != null)
+            {
+                openChestButton.gameObject.SetActive(won);
+                openChestButton.interactable = true;
+                if (openChestButtonText != null)
+                {
+                    openChestButtonText.text = "🎁 MỞ RƯƠNG BOSS CHIẾN THẮNG";
+                }
+            }
+        }
+
+        private void HandleOpenVictoryChest()
+        {
+            if (hasClaimedVictoryChest) return;
+            hasClaimedVictoryChest = true;
+
+            var reward = Loot.ChestService.OpenChest(Loot.ChestType.Boss);
+            if (AccountProgression.Instance != null && reward != null)
+            {
+                AccountProgression.Instance.AddEquipment(reward.Item);
+                AccountProgression.Instance.AddGold(reward.BonusGold);
+                AccountProgression.Instance.AddScrap(reward.BonusScrap);
+            }
+
+            if (openChestButton != null)
+            {
+                openChestButton.interactable = false;
+            }
+            if (openChestButtonText != null)
+            {
+                openChestButtonText.text = "✓ ĐÃ NHẬN RƯƠNG";
+            }
+
+            if (accountRewardText != null && reward != null)
+            {
+                accountRewardText.text = $"🎉 MỞ RƯƠNG THÀNH CÔNG: Nhận <b>{reward.Item.DisplayName}</b> ({reward.Item.GetRarityName()}) + {reward.BonusGold} Vàng 💰 + {reward.BonusScrap} Scrap ⚙️!";
+            }
+
+            Apocarrot.Audio.AudioManager.Instance?.PlayCoinPickup();
+        }
+
+        private void HandleReturnToHome()
+        {
+            if (overlayRoot != null)
+            {
+                overlayRoot.SetActive(false);
+            }
+
+            Time.timeScale = 1f;
+            OnReturnToHomeRequested?.Invoke();
         }
 
         private void HandlePlayAgain()

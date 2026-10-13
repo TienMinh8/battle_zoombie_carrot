@@ -86,6 +86,46 @@ namespace Apocarrot.EditorTools
                 Debug.LogWarning("[QA] Hãy bấm Play trước khi đổi trạng thái năng lượng!");
             }
         }
+
+        [MenuItem("Apocarrot/QA/6. Cấp 1000 Vàng + 100 Gems + 50 Scrap (Meta Resources)")]
+        public static void GrantMetaResources()
+        {
+            if (AccountProgression.Instance != null)
+            {
+                AccountProgression.Instance.AddGold(1000);
+                AccountProgression.Instance.AddGems(100);
+                AccountProgression.Instance.AddScrap(50);
+                Debug.Log("[QA] Đã cấp +1000 Vàng, +100 Gems, +50 Scrap cho tài khoản!");
+            }
+            else
+            {
+                Debug.LogWarning("[QA] Hãy bấm Play trước khi cấp tài nguyên!");
+            }
+        }
+
+        [MenuItem("Apocarrot/QA/7. Mở Thử 1 Rương Boss (Test Boss Chest Unbox)")]
+        public static void TestOpenBossChest()
+        {
+            var reward = Loot.ChestService.OpenChest(Loot.ChestType.Boss);
+            if (AccountProgression.Instance != null && reward != null)
+            {
+                AccountProgression.Instance.AddEquipment(reward.Item);
+                AccountProgression.Instance.AddGold(reward.BonusGold);
+                AccountProgression.Instance.AddScrap(reward.BonusScrap);
+                UI.HomeHubUI.Instance?.ShowChestRewardPopup(reward);
+                Debug.Log($"[QA] Mở Rương Boss thành công: {reward.Item.DisplayName} ({reward.Item.GetRarityName()})!");
+            }
+        }
+
+        [MenuItem("Apocarrot/QA/8. Chuyển Về Sảnh Chính (Return to Home Hub)")]
+        public static void ReturnToHomeHub()
+        {
+            if (WaveDirector.Instance != null)
+            {
+                WaveDirector.Instance.ReturnToHome();
+                Debug.Log("[QA] Đã chuyển về Sảnh Chính (Home Hub)!");
+            }
+        }
     }
 }
 #endif

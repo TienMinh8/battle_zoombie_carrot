@@ -133,6 +133,11 @@ namespace Apocarrot.Progression
                 data.EquippedBadge = EquipmentItem.CreateCarrotBadge(EquipmentRarity.Rare, 1);
             }
 
+            if (data.Bestiary == null || data.Bestiary.Count == 0)
+            {
+                data.InitializeDefaultBestiary();
+            }
+
             if (data.OwnedEquipments == null)
             {
                 data.OwnedEquipments = new List<EquipmentItem>();
@@ -199,13 +204,25 @@ namespace Apocarrot.Progression
             currentData.TotalEnemiesKilled++;
 
             int xpGain = 10;
+            string bestiaryId = "basic";
             switch (variant)
             {
-                case EnemyVariantType.Fast: xpGain = 15; break;
-                case EnemyVariantType.Elite: xpGain = 35; break;
-                case EnemyVariantType.Basic: default: xpGain = 10; break;
+                case EnemyVariantType.Fast:
+                    xpGain = 15;
+                    bestiaryId = "fast";
+                    break;
+                case EnemyVariantType.Elite:
+                    xpGain = 35;
+                    bestiaryId = "elite";
+                    break;
+                case EnemyVariantType.Basic:
+                default:
+                    xpGain = 10;
+                    bestiaryId = "basic";
+                    break;
             }
 
+            currentData.RecordBestiaryKill(bestiaryId);
             pendingRunXP += xpGain;
 
             UpdateAchievementProgress("first_kill", 1);
@@ -233,6 +250,7 @@ namespace Apocarrot.Progression
             if (currentData == null) return;
 
             currentData.TotalBossesDefeated++;
+            currentData.RecordBestiaryKill("king_carrot");
             pendingRunXP += 200; // Thưởng 200 XP khi hạ King Carrot!
             UpdateAchievementProgress("king_carrot_slayer", 1);
         }
@@ -257,6 +275,7 @@ namespace Apocarrot.Progression
             if (won)
             {
                 currentData.TotalRunsWon++;
+                currentData.TotalLevelsCompleted++;
                 pendingRunXP += 150; // Thưởng bonus thắng màn
                 // Quy tắc kinh tế: Chuyển 50% số vàng thu được trong run thành Vàng Tài Khoản vĩnh viễn
                 convertedGold = Mathf.FloorToInt(runGold * 0.5f);
@@ -458,6 +477,94 @@ namespace Apocarrot.Progression
             currentData.OwnedEquipments.Insert(0, item); // Đưa lên đầu túi đồ để người chơi thấy ngay lập tức!
             SaveAccount();
             Debug.Log($"[AccountProgression] Đã thêm trang bị mới vào Balo: {item.DisplayName} ({item.GetRarityName()})");
+        }
+
+        public bool SalvageEquipment(EquipmentItem item, out int scrapGained)
+        {
+            scrapGained = 0;
+            if (currentData == null || item == null) return false;
+            bool success = currentData.SalvageEquipment(item, out scrapGained);
+            if (success)
+            {
+                SaveAccount();
+                OnAccountDataChanged?.Invoke();
+                Apocarrot.Audio.AudioManager.Instance?.PlayCoinPickup();
+            }
+            return success;
+        }
+
+        public bool UpgradeEquipment(EquipmentItem item, out string message)
+        {
+            message = "";
+            if (currentData == null || item == null) return false;
+            bool success = currentData.UpgradeEquipment(item, out message);
+            if (success)
+            {
+                SaveAccount();
+                OnAccountDataChanged?.Invoke();
+                Apocarrot.Audio.AudioManager.Instance?.PlayMergeSuccess();
+            }
+            return success;
+        }
+
+        public bool ClaimAchievement(string achievementId, out int gold, out int gems, out int scrap, out int xp)
+        {
+            gold = 0; gems = 0; scrap = 0; xp = 0;
+            if (currentData == null) return false;
+            bool success = currentData.ClaimAchievement(achievementId, out gold, out gems, out scrap, out xp);
+            if (success)
+            {
+                SaveAccount();
+                OnAccountDataChanged?.Invoke();
+                Apocarrot.Audio.AudioManager.Instance?.PlayCoinPickup();
+            }
+            return success;
+        }
+
+        public bool ConsumeEnergy(int amount)
+        {
+            if (currentData == null) return true;
+            if (currentData.UnlimitedEnergyForTesting) return true;
+            if (currentData.CurrentEnergy >= amount)
+            {
+                currentData.CurrentEnergy -= amount;
+                SaveAccount();
+                OnAccountDataChanged?.Invoke();
+                return true;
+            }
+            return false;
+        }
+
+        public void AddGold(int amount)
+        {
+            if (currentData == null) return;
+            currentData.PermanentGold += amount;
+            SaveAccount();
+            OnAccountDataChanged?.Invoke();
+        }
+
+        public void AddGems(int amount)
+        {
+            if (currentData == null) return;
+            currentData.PermanentGems += amount;
+            SaveAccount();
+            OnAccountDataChanged?.Invoke();
+        }
+
+        public void AddScrap(int amount)
+        {
+            if (currentData == null) return;
+            currentData.PermanentScrap += amount;
+            SaveAccount();
+            OnAccountDataChanged?.Invoke();
+        }
+
+        public void AddEnergy(int amount)
+        {
+            if (currentData == null) return;
+            currentData.CurrentEnergy = Mathf.Min(currentData.CurrentEnergy + amount, currentData.MaxEnergy);
+            SaveAccount();
+            OnAccountDataChanged?.Invoke();
         }
 
         public void SetUnlimitedEnergy(bool unlimited)

@@ -94,10 +94,20 @@ namespace Apocarrot.Arena
             if (ResultsScreenUI.Instance != null)
             {
                 ResultsScreenUI.Instance.OnPlayAgainRequested += RestartRun;
+                ResultsScreenUI.Instance.OnReturnToHomeRequested += ReturnToHome;
             }
 
-            runStartTime = Time.time;
-            StartWave(0);
+            if (HomeHubUI.Instance != null)
+            {
+                HomeHubUI.Instance.OnStartRunRequested += StartRun;
+            }
+
+            if (playerController != null)
+            {
+                playerController.enabled = false;
+            }
+
+            currentState = RunState.NotStarted;
         }
 
         private void OnDestroy()
@@ -120,6 +130,12 @@ namespace Apocarrot.Arena
             if (ResultsScreenUI.Instance != null)
             {
                 ResultsScreenUI.Instance.OnPlayAgainRequested -= RestartRun;
+                ResultsScreenUI.Instance.OnReturnToHomeRequested -= ReturnToHome;
+            }
+
+            if (HomeHubUI.Instance != null)
+            {
+                HomeHubUI.Instance.OnStartRunRequested -= StartRun;
             }
         }
 
@@ -363,9 +379,8 @@ namespace Apocarrot.Arena
             }
         }
 
-        public void RestartRun()
+        public void CleanUpArena()
         {
-            // Xóa toàn bộ quái và vật phẩm nhặt trên sàn
             var enemies = FindObjectsByType<EnemyHealth>(FindObjectsSortMode.None);
             foreach (var e in enemies)
             {
@@ -384,6 +399,27 @@ namespace Apocarrot.Arena
                 if (proj != null) Destroy(proj.gameObject);
             }
 
+            if (BossHealthBarUI.Instance != null)
+            {
+                BossHealthBarUI.Instance.Hide();
+            }
+
+            if (EquipmentBagUI.Instance != null && EquipmentBagUI.Instance.IsOpen)
+            {
+                EquipmentBagUI.Instance.CloseBag();
+            }
+        }
+
+        public void StartRun()
+        {
+            RestartRun();
+        }
+
+        public void RestartRun()
+        {
+            if (waveSpawnCoroutine != null) StopCoroutine(waveSpawnCoroutine);
+            CleanUpArena();
+
             // Reset kho đồ và máu Thỏ
             if (RunInventory.Instance != null)
             {
@@ -401,23 +437,43 @@ namespace Apocarrot.Arena
                 if (cc != null) cc.enabled = false;
                 playerController.transform.position = Vector3.zero;
                 if (cc != null) cc.enabled = true;
+                playerController.enabled = true;
             }
 
             totalKillsInRun = 0;
             runStartTime = Time.time;
             Progression.AccountProgression.Instance?.StartNewRun();
 
-            if (BossHealthBarUI.Instance != null)
-            {
-                BossHealthBarUI.Instance.Hide();
-            }
-
-            if (EquipmentBagUI.Instance != null && EquipmentBagUI.Instance.IsOpen)
-            {
-                EquipmentBagUI.Instance.CloseBag();
-            }
+            FindFirstObjectByType<ArenaSceneBootstrap>()?.SetCombatHUDActive(true);
+            HomeHubUI.Instance?.HideHub();
 
             StartWave(0);
+        }
+
+        public void ReturnToHome()
+        {
+            if (waveSpawnCoroutine != null) StopCoroutine(waveSpawnCoroutine);
+            CleanUpArena();
+
+            if (playerHealth != null)
+            {
+                playerHealth.Revive(100f);
+            }
+
+            if (playerController != null)
+            {
+                var cc = playerController.GetComponent<CharacterController>();
+                if (cc != null) cc.enabled = false;
+                playerController.transform.position = Vector3.zero;
+                if (cc != null) cc.enabled = true;
+                playerController.enabled = false;
+            }
+
+            currentState = RunState.NotStarted;
+            Time.timeScale = 1f;
+
+            FindFirstObjectByType<ArenaSceneBootstrap>()?.SetCombatHUDActive(false);
+            HomeHubUI.Instance?.ShowHub();
         }
 
         private void UpdateHUD()

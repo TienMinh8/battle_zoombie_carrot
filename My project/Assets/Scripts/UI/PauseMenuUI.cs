@@ -24,6 +24,7 @@ namespace Apocarrot.UI
         [SerializeField] private Text sfxValueText;
         [SerializeField] private Button resumeButton;
         [SerializeField] private Button restartButton;
+        [SerializeField] private Button quitHomeButton;
 
         public bool IsPaused { get; private set; } = false;
 
@@ -97,6 +98,12 @@ namespace Apocarrot.UI
                 restartButton.onClick.RemoveAllListeners();
                 restartButton.onClick.AddListener(RestartRun);
             }
+
+            if (quitHomeButton != null)
+            {
+                quitHomeButton.onClick.RemoveAllListeners();
+                quitHomeButton.onClick.AddListener(QuitToHome);
+            }
         }
 
         private void OnBGMChanged(float val)
@@ -160,7 +167,16 @@ namespace Apocarrot.UI
         {
             Time.timeScale = 1f;
             IsPaused = false;
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            if (modalRoot != null) modalRoot.SetActive(false);
+            Arena.WaveDirector.Instance?.RestartRun();
+        }
+
+        public void QuitToHome()
+        {
+            Time.timeScale = 1f;
+            IsPaused = false;
+            if (modalRoot != null) modalRoot.SetActive(false);
+            Arena.WaveDirector.Instance?.ReturnToHome();
         }
 
         // ========================== DYNAMIC UI CREATION ==========================
@@ -193,7 +209,7 @@ namespace Apocarrot.UI
             boxRt.anchorMin = new Vector2(0.5f, 0.5f);
             boxRt.anchorMax = new Vector2(0.5f, 0.5f);
             boxRt.pivot = new Vector2(0.5f, 0.5f);
-            boxRt.sizeDelta = new Vector2(440, 420);
+            boxRt.sizeDelta = new Vector2(440, 480);
 
             Image boxImg = boxObj.AddComponent<Image>();
             boxImg.color = new Color(0.10f, 0.13f, 0.20f, 0.98f);
@@ -242,9 +258,11 @@ namespace Apocarrot.UI
             var sfxElements = CreateSliderRow(boxObj, font, -195, "🔊 Hiệu Ứng (SFX):");
 
             // Resume Button
-            GameObject resumeBtnObj = CreateActionButton(boxObj, font, -280, "▶ TIẾP TỤC CHIẾN ĐẤU", new Color(0.18f, 0.65f, 0.35f));
+            GameObject resumeBtnObj = CreateActionButton(boxObj, font, -270, "▶ TIẾP TỤC CHIẾN ĐẤU", new Color(0.18f, 0.65f, 0.35f));
             // Restart Button
-            GameObject restartBtnObj = CreateActionButton(boxObj, font, -345, "🔄 CHƠI LẠI TRẬN (RESTART)", new Color(0.85f, 0.25f, 0.25f));
+            GameObject restartBtnObj = CreateActionButton(boxObj, font, -330, "🔄 CHƠI LẠI TRẬN (RESTART)", new Color(0.85f, 0.45f, 0.25f));
+            // Quit to Home Button
+            GameObject quitHomeBtnObj = CreateActionButton(boxObj, font, -390, "🏰 VỀ SẢNH CHÍNH (QUIT TO HOME)", new Color(0.18f, 0.55f, 0.85f));
 
             // Bind References
             pauseUI.modalRoot = rootObj;
@@ -254,6 +272,7 @@ namespace Apocarrot.UI
             pauseUI.sfxValueText = sfxElements.valueText;
             pauseUI.resumeButton = resumeBtnObj.GetComponent<Button>();
             pauseUI.restartButton = restartBtnObj.GetComponent<Button>();
+            pauseUI.quitHomeButton = quitHomeBtnObj.GetComponent<Button>();
 
             pauseUI.InitializeValues();
             rootObj.SetActive(false);

@@ -27,6 +27,16 @@ namespace Apocarrot.Arena
         [Header("Gate 3 Test Enemies")]
         [SerializeField] private int initialEnemyCount = 3;
 
+        private GameObject combatHudRoot;
+
+        public void SetCombatHUDActive(bool active)
+        {
+            if (combatHudRoot != null)
+            {
+                combatHudRoot.SetActive(active);
+            }
+        }
+
         private void Awake()
         {
             // Khởi tạo Audio Manager nếu chưa tồn tại
@@ -279,9 +289,18 @@ namespace Apocarrot.Arena
 
             Font defaultFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
 
+            // Root chứa toàn bộ HUD trong trận đấu
+            combatHudRoot = new GameObject("CombatHUD_Root");
+            combatHudRoot.transform.SetParent(canvasObj.transform, false);
+            RectTransform chrRt = combatHudRoot.AddComponent<RectTransform>();
+            chrRt.anchorMin = Vector2.zero;
+            chrRt.anchorMax = Vector2.one;
+            chrRt.offsetMin = Vector2.zero;
+            chrRt.offsetMax = Vector2.zero;
+
             // 1. HUD Top-Left (Máu & Tên Game & Tiến độ Wave)
             GameObject hudPanel = new GameObject("MinimalHUD");
-            hudPanel.transform.SetParent(canvasObj.transform, false);
+            hudPanel.transform.SetParent(combatHudRoot.transform, false);
             RectTransform hudRect = hudPanel.AddComponent<RectTransform>();
             hudRect.anchorMin = new Vector2(0, 1);
             hudRect.anchorMax = new Vector2(0, 1);
@@ -367,7 +386,7 @@ namespace Apocarrot.Arena
 
             // 2. HUD Top-Center (Run Inventory: Vàng & Túi Đồ 6 Ô)
             GameObject invPanel = new GameObject("RunInventory_HUD");
-            invPanel.transform.SetParent(canvasObj.transform, false);
+            invPanel.transform.SetParent(combatHudRoot.transform, false);
             RectTransform invRect = invPanel.AddComponent<RectTransform>();
             invRect.anchorMin = new Vector2(0.5f, 1);
             invRect.anchorMax = new Vector2(0.5f, 1);
@@ -527,7 +546,7 @@ namespace Apocarrot.Arena
 
             // 3. Hướng dẫn phím ở góc trên bên trái (dưới thanh Máu, không đè lên Hồ sơ tài khoản & nút Balo)
             GameObject hintObj = new GameObject("Controls_Hint");
-            hintObj.transform.SetParent(canvasObj.transform, false);
+            hintObj.transform.SetParent(combatHudRoot.transform, false);
             Text hintText = hintObj.AddComponent<Text>();
             hintText.font = defaultFont;
             hintText.fontSize = 13;
@@ -543,7 +562,7 @@ namespace Apocarrot.Arena
 
             // 3. Joystick Ảo góc dưới bên trái
             GameObject joystickObj = new GameObject("VirtualJoystick");
-            joystickObj.transform.SetParent(canvasObj.transform, false);
+            joystickObj.transform.SetParent(combatHudRoot.transform, false);
             RectTransform joyRect = joystickObj.AddComponent<RectTransform>();
             joyRect.anchorMin = new Vector2(0, 0);
             joyRect.anchorMax = new Vector2(0, 0);
@@ -566,7 +585,7 @@ namespace Apocarrot.Arena
 
             // 4. Nút Đánh Cận Chiến (Melee Attack Button) góc dưới bên phải
             GameObject attackBtnObj = new GameObject("MeleeAttackButton");
-            attackBtnObj.transform.SetParent(canvasObj.transform, false);
+            attackBtnObj.transform.SetParent(combatHudRoot.transform, false);
             RectTransform attackRect = attackBtnObj.AddComponent<RectTransform>();
             attackRect.anchorMin = new Vector2(1, 0);
             attackRect.anchorMax = new Vector2(1, 0);
@@ -608,7 +627,7 @@ namespace Apocarrot.Arena
 
             // 5. Nút Chuyển Đổi Vũ Khí Cận Chiến (Carrot Blade <-> Carrot Axe)
             GameObject switchBtnObj = new GameObject("Switch_Melee_Button");
-            switchBtnObj.transform.SetParent(canvasObj.transform, false);
+            switchBtnObj.transform.SetParent(combatHudRoot.transform, false);
             RectTransform switchRect = switchBtnObj.AddComponent<RectTransform>();
             switchRect.anchorMin = new Vector2(1, 0);
             switchRect.anchorMax = new Vector2(1, 0);
@@ -647,7 +666,7 @@ namespace Apocarrot.Arena
 
             // 6. KHỐI HIỂN THỊ VŨ KHÍ TẦM XA TỰ ĐỘNG (Ranged Weapon Display)
             GameObject rangedPanel = new GameObject("RangedWeaponPanel");
-            rangedPanel.transform.SetParent(canvasObj.transform, false);
+            rangedPanel.transform.SetParent(combatHudRoot.transform, false);
             RectTransform rangedRect = rangedPanel.AddComponent<RectTransform>();
             rangedRect.anchorMin = new Vector2(1, 0);
             rangedRect.anchorMax = new Vector2(1, 0);
@@ -959,6 +978,18 @@ namespace Apocarrot.Arena
 
             // 17. Xây dựng Menu Tạm Dừng & Cài Đặt Âm Lượng (Pause Menu & Audio Settings)
             BuildPauseMenuUI(canvasObj, defaultFont);
+
+            // 18. Xây dựng Sảnh Chính Hoàn Chỉnh Master Home Hub (5 Tabs: Chiến Đấu, Trang Bị, Rương, Sổ Tay, Hồ Sơ)
+            BuildHomeHubUI(canvasObj, defaultFont);
+
+            // Khởi đầu App: Ở Sảnh Chính (Home Hub), ẩn HUD Chiến đấu trong trận
+            SetCombatHUDActive(false);
+            HomeHubUI.Instance?.ShowHub();
+        }
+
+        private void BuildHomeHubUI(GameObject canvasObj, Font defaultFont)
+        {
+            HomeHubUI.CreateHomeHubUI(canvasObj, defaultFont);
         }
 
         private void BuildIntermissionUI(GameObject canvasObj, Font defaultFont, RunInventory runInventory)
@@ -1543,7 +1574,7 @@ namespace Apocarrot.Arena
         private void BuildAccountProfileHUD(GameObject canvasObj, Font defaultFont)
         {
             GameObject profilePanel = new GameObject("AccountProfile_HUD");
-            profilePanel.transform.SetParent(canvasObj.transform, false);
+            profilePanel.transform.SetParent(combatHudRoot.transform, false);
             RectTransform profileRect = profilePanel.AddComponent<RectTransform>();
             profileRect.anchorMin = new Vector2(1, 1);
             profileRect.anchorMax = new Vector2(1, 1);
@@ -1590,7 +1621,7 @@ namespace Apocarrot.Arena
 
             // Nút Mở Balo & Trang Bị (Survivor.io / Archero Bag)
             GameObject bagBtnObj = new GameObject("Btn_Open_EquipmentBag");
-            bagBtnObj.transform.SetParent(canvasObj.transform, false);
+            bagBtnObj.transform.SetParent(combatHudRoot.transform, false);
             RectTransform bagBtnRect = bagBtnObj.AddComponent<RectTransform>();
             bagBtnRect.anchorMin = new Vector2(1, 1);
             bagBtnRect.anchorMax = new Vector2(1, 1);
@@ -1626,7 +1657,7 @@ namespace Apocarrot.Arena
 
             // Nút Tạm Dừng ⏸ (Pause Button)
             GameObject pauseBtnObj = new GameObject("Btn_Pause");
-            pauseBtnObj.transform.SetParent(canvasObj.transform, false);
+            pauseBtnObj.transform.SetParent(combatHudRoot.transform, false);
             RectTransform pauseBtnRect = pauseBtnObj.AddComponent<RectTransform>();
             pauseBtnRect.anchorMin = new Vector2(1, 1);
             pauseBtnRect.anchorMax = new Vector2(1, 1);
@@ -1708,7 +1739,7 @@ namespace Apocarrot.Arena
             cardRect.anchorMin = new Vector2(0.5f, 0.5f);
             cardRect.anchorMax = new Vector2(0.5f, 0.5f);
             cardRect.pivot = new Vector2(0.5f, 0.5f);
-            cardRect.sizeDelta = new Vector2(760, 580);
+            cardRect.sizeDelta = new Vector2(800, 640);
 
             Image cardBg = card.AddComponent<Image>();
             cardBg.color = new Color(0.09f, 0.11f, 0.15f, 0.98f);
@@ -1760,7 +1791,7 @@ namespace Apocarrot.Arena
             statsRect.anchorMax = new Vector2(0.5f, 1);
             statsRect.pivot = new Vector2(0, 1);
             statsRect.anchoredPosition = new Vector2(30, -95);
-            statsRect.sizeDelta = new Vector2(330, 260);
+            statsRect.sizeDelta = new Vector2(350, 270);
 
             Text statsText = statsObj.AddComponent<Text>();
             statsText.font = defaultFont;
@@ -1777,7 +1808,7 @@ namespace Apocarrot.Arena
             progPanelRect.anchorMax = new Vector2(1, 1);
             progPanelRect.pivot = new Vector2(0, 1);
             progPanelRect.anchoredPosition = new Vector2(20, -95);
-            progPanelRect.sizeDelta = new Vector2(330, 260);
+            progPanelRect.sizeDelta = new Vector2(350, 270);
 
             Image progBg = progPanel.AddComponent<Image>();
             progBg.color = new Color(0.13f, 0.15f, 0.22f, 0.85f);
@@ -1859,8 +1890,8 @@ namespace Apocarrot.Arena
             noticeRect.anchorMin = new Vector2(0, 0);
             noticeRect.anchorMax = new Vector2(1, 0);
             noticeRect.pivot = new Vector2(0.5f, 0);
-            noticeRect.anchoredPosition = new Vector2(0, 80);
-            noticeRect.sizeDelta = new Vector2(-60, 50);
+            noticeRect.anchoredPosition = new Vector2(0, 135);
+            noticeRect.sizeDelta = new Vector2(-60, 42);
 
             Text noticeTxt = noticeObj.AddComponent<Text>();
             noticeTxt.font = defaultFont;
@@ -1869,15 +1900,67 @@ namespace Apocarrot.Arena
             noticeTxt.color = new Color(0.85f, 0.9f, 0.95f, 0.9f);
             noticeTxt.text = "🛡️ QUY TẮC ROGUELITE: Đồ nhặt trong run đã bị xóa; Cấp thỏ & thành tựu được lưu vĩnh viễn.";
 
-            // Nút Chơi Lại (Play Again)
+            // Hàng 1: Nút Mở Rương Boss (Trái) & Nút Về Sảnh (Phải)
+            GameObject openChestBtnObj = new GameObject("Victory_Chest_Button");
+            openChestBtnObj.transform.SetParent(card.transform, false);
+            RectTransform openChestRect = openChestBtnObj.AddComponent<RectTransform>();
+            openChestRect.anchorMin = new Vector2(0.5f, 0);
+            openChestRect.anchorMax = new Vector2(0.5f, 0);
+            openChestRect.pivot = new Vector2(0.5f, 0);
+            openChestRect.anchoredPosition = new Vector2(-185, 76);
+            openChestRect.sizeDelta = new Vector2(340, 48);
+
+            Image openChestBg = openChestBtnObj.AddComponent<Image>();
+            openChestBg.color = new Color(0.95f, 0.65f, 0.12f);
+            Button openChestBtn = openChestBtnObj.AddComponent<Button>();
+
+            GameObject ocTxtObj = new GameObject("Text");
+            ocTxtObj.transform.SetParent(openChestBtnObj.transform, false);
+            Text ocTxt = ocTxtObj.AddComponent<Text>();
+            ocTxt.font = defaultFont;
+            ocTxt.fontSize = 15;
+            ocTxt.fontStyle = FontStyle.Bold;
+            ocTxt.alignment = TextAnchor.MiddleCenter;
+            ocTxt.color = Color.white;
+            ocTxt.text = "🎁 MỞ RƯƠNG BOSS CHIẾN THẮNG";
+            RectTransform ocTxtRect = ocTxtObj.GetComponent<RectTransform>();
+            ocTxtRect.anchorMin = Vector2.zero; ocTxtRect.anchorMax = Vector2.one; ocTxtRect.sizeDelta = Vector2.zero;
+
+            // Nút Về Sảnh Chính (Home Hub)
+            GameObject homeBtnObj = new GameObject("Return_Home_Button");
+            homeBtnObj.transform.SetParent(card.transform, false);
+            RectTransform homeRect = homeBtnObj.AddComponent<RectTransform>();
+            homeRect.anchorMin = new Vector2(0.5f, 0);
+            homeRect.anchorMax = new Vector2(0.5f, 0);
+            homeRect.pivot = new Vector2(0.5f, 0);
+            homeRect.anchoredPosition = new Vector2(185, 76);
+            homeRect.sizeDelta = new Vector2(340, 48);
+
+            Image homeBg = homeBtnObj.AddComponent<Image>();
+            homeBg.color = new Color(0.18f, 0.55f, 0.85f);
+            Button homeBtn = homeBtnObj.AddComponent<Button>();
+
+            GameObject hmTxtObj = new GameObject("Text");
+            hmTxtObj.transform.SetParent(homeBtnObj.transform, false);
+            Text hmTxt = hmTxtObj.AddComponent<Text>();
+            hmTxt.font = defaultFont;
+            hmTxt.fontSize = 15;
+            hmTxt.fontStyle = FontStyle.Bold;
+            hmTxt.alignment = TextAnchor.MiddleCenter;
+            hmTxt.color = Color.white;
+            hmTxt.text = "🏰 VỀ SẢNH CHÍNH (HOME)";
+            RectTransform hmTxtRect = hmTxtObj.GetComponent<RectTransform>();
+            hmTxtRect.anchorMin = Vector2.zero; hmTxtRect.anchorMax = Vector2.one; hmTxtRect.sizeDelta = Vector2.zero;
+
+            // Hàng 2: Nút Chơi Lại (Play Again) & Nút Reset Tiến Trình
             GameObject playAgainBtnObj = new GameObject("Play_Again_Button");
             playAgainBtnObj.transform.SetParent(card.transform, false);
             RectTransform playAgainRect = playAgainBtnObj.AddComponent<RectTransform>();
             playAgainRect.anchorMin = new Vector2(0.5f, 0);
             playAgainRect.anchorMax = new Vector2(0.5f, 0);
             playAgainRect.pivot = new Vector2(0.5f, 0);
-            playAgainRect.anchoredPosition = new Vector2(-130, 20);
-            playAgainRect.sizeDelta = new Vector2(300, 48);
+            playAgainRect.anchoredPosition = new Vector2(-185, 18);
+            playAgainRect.sizeDelta = new Vector2(340, 48);
 
             Image playAgainBg = playAgainBtnObj.AddComponent<Image>();
             playAgainBg.color = new Color(0.18f, 0.75f, 0.35f);
@@ -1887,15 +1970,13 @@ namespace Apocarrot.Arena
             paTxtObj.transform.SetParent(playAgainBtnObj.transform, false);
             Text paTxt = paTxtObj.AddComponent<Text>();
             paTxt.font = defaultFont;
-            paTxt.fontSize = 16;
+            paTxt.fontSize = 15;
             paTxt.fontStyle = FontStyle.Bold;
             paTxt.alignment = TextAnchor.MiddleCenter;
             paTxt.color = Color.white;
             paTxt.text = "CHƠI LẠI RUN MỚI 🔄";
             RectTransform paTxtRect = paTxtObj.GetComponent<RectTransform>();
-            paTxtRect.anchorMin = Vector2.zero;
-            paTxtRect.anchorMax = Vector2.one;
-            paTxtRect.sizeDelta = Vector2.zero;
+            paTxtRect.anchorMin = Vector2.zero; paTxtRect.anchorMax = Vector2.one; paTxtRect.sizeDelta = Vector2.zero;
 
             // Nút Reset Tiến Trình (Dev QA Test)
             GameObject resetBtnObj = new GameObject("Reset_Prog_Button");
@@ -1904,8 +1985,8 @@ namespace Apocarrot.Arena
             resetRect.anchorMin = new Vector2(0.5f, 0);
             resetRect.anchorMax = new Vector2(0.5f, 0);
             resetRect.pivot = new Vector2(0.5f, 0);
-            resetRect.anchoredPosition = new Vector2(170, 20);
-            resetRect.sizeDelta = new Vector2(240, 48);
+            resetRect.anchoredPosition = new Vector2(185, 18);
+            resetRect.sizeDelta = new Vector2(340, 48);
 
             Image resetBg = resetBtnObj.AddComponent<Image>();
             resetBg.color = new Color(0.35f, 0.38f, 0.45f);
@@ -1921,9 +2002,7 @@ namespace Apocarrot.Arena
             resTxt.color = Color.white;
             resTxt.text = "XÓA SAVE (DEV RESET)";
             RectTransform resTxtRect = resTxtObj.GetComponent<RectTransform>();
-            resTxtRect.anchorMin = Vector2.zero;
-            resTxtRect.anchorMax = Vector2.one;
-            resTxtRect.sizeDelta = Vector2.zero;
+            resTxtRect.anchorMin = Vector2.zero; resTxtRect.anchorMax = Vector2.one; resTxtRect.sizeDelta = Vector2.zero;
 
             ResultsScreenUI resultsUI = overlay.AddComponent<ResultsScreenUI>();
             resultsUI.Bind(
@@ -1933,7 +2012,10 @@ namespace Apocarrot.Arena
                 lvlText, xpTxt, xpFill, rwdTxt,
                 noticeTxt,
                 playAgainBtn,
-                resetBtn
+                resetBtn,
+                homeBtn,
+                openChestBtn,
+                ocTxt
             );
         }
     }

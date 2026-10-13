@@ -81,3 +81,49 @@
 | **v0.8** | Trải nghiệm & Cài đặt (UX, Pause Menu, Audio Settings) | **100%** | Nút Pause ⏸, phím [Esc]/[P], chỉnh âm lượng BGM/SFX, hướng dẫn đầy đủ. |
 | **v0.9** | Kiểm thử & Clean Build Candidate | **100%** | Biên dịch 0 lỗi, Unity log sạch. |
 | **v1.0** | Cột mốc hoàn chỉnh có thể chơi xuất sắc (Playable Milestone) | **100%** | Toàn bộ vòng lặp chiến đấu, túi đồ, nâng cấp, âm thanh và giao diện hoàn tất! |
+| **App Meta Loop** | Giao diện App 5 Tab & Sảnh Chính (Expansion Design v1.0) | **100%** | Hoàn thành Sảnh Chính Home Hub, 5 Tab điều hướng, Mở rương, Phân giải, Sổ tay quái, Hồ sơ & Thành tựu. |
+
+---
+
+## 4. HỆ THỐNG ỨNG DỤNG TOÀN DIỆN (5-TAB MOBILE APP & META-LOOP FLOW)
+
+Dựa trên tài liệu mở rộng `APOCARROT_Gameplay_Expansion_Design.md`, trò chơi đã được nâng cấp từ một bản demo đấu trường đơn lẻ thành một **ứng dụng game di động hoàn chỉnh** với vòng lặp meta-loop sâu sắc:
+
+### 4.1. Luồng Chơi Của Ứng Dụng (App Flow)
+- **Điểm bắt đầu:** Khởi động game tại **Sảnh Chính (Home Hub)** với Thỏ Chiến Binh, tài nguyên, danh sách ải thay vì ném thẳng vào chiến đấu.
+- **Vào trận:** Người chơi chuẩn bị trang bị ở Tab Trang Bị, sau đó nhấn `▶ BẮT ĐẦU VƯỢT ẢI (5 ⚡) ◀` trên Tab Chiến Đấu để bắt đầu run.
+- **Trong trận:** Giao diện tự động chuyển sang Combat HUD (Joystick, nút chém, súng tầm xa, túi đồ in-run).
+- **Kết thúc trận (Thắng / Thua):**
+  - Màn hình Kết Quả tổng kết chiến tích, quy đổi XP & Vàng tài khoản.
+  - **Khi Chiến Thắng:** Kích hoạt tính năng **🎁 MỞ RƯƠNG BOSS CHIẾN THẮNG** nhận ngay trang bị vĩnh viễn theo tỷ lệ GDD 5.3.
+  - Tùy chọn **🏰 VỀ SẢNH CHÍNH (HOME)** để quay lại Sảnh Quản Lý hoặc **🔄 CHƠI LẠI RUN MỚI**.
+- **Pause Menu:** Bổ sung nút **🏰 VỀ SẢNH CHÍNH (QUIT TO HOME)** để thoát trận an toàn bất kỳ lúc nào.
+
+### 4.2. Hệ Thống 5 Tab Điều Hướng (Bottom Navigation)
+1. ⚔️ **Chiến Đấu (Battle / Sảnh Chính):**
+   - Banner Chương 1: Khu Vườn Đột Biến (Màn 1-1: Căn Cứ Cà Rốt).
+   - Thống kê Chiến Lực Thỏ: Tổng Sát Thương (ATK), Máu Tối Đa (HP), Vũ khí tầm xa.
+   - Nút lớn CTA: `▶ BẮT ĐẦU VƯỢT ẢI (5 ⚡) ◀`.
+2. 🎒 **Trang Bị (Equipment & Kho Đồ):**
+   - 8 Ô trang bị chính quy của Thỏ: Cận chiến, Tầm xa, Vòng cổ, Găng tay, Áo giáp, Thắt lưng, Giày chạy, Huy hiệu.
+   - Kho trang bị sở hữu (Inventory Grid) dạng lưới cuộn.
+   - Modal Chi Tiết: Nút **[TRANG BỊ / THÁO RA]**, nút **[NÂNG CẤP]** (dùng Vàng + Scrap), nút **[PHÂN GIẢI]** (thu hồi Scrap theo độ hiếm).
+   - Nút **[GHÉP ĐỒ TỰ ĐỘNG (FUSE)]** và **[PHÂN GIẢI ĐỒ THƯỜNG]**.
+3. 🎁 **Rương & Cửa Hàng (Chests & Shop):**
+   - 3 Cấp Rương theo chuẩn GDD 5.3:
+     - 📦 **Rương Chiến Tranh (Normal):** 100 Vàng (70% Thường, 25% Hiếm, 4% Sử thi, 1% Huyền thoại).
+     - 🏆 **Rương Tinh Anh (Elite):** 20 Gems (40% Thường, 45% Hiếm, 13% Sử thi, 2% Huyền thoại).
+     - 👑 **Rương Chúa Tể (Boss):** 50 Gems / Hạ Boss (20% Thường, 45% Hiếm, 28% Sử thi, 7% Huyền thoại).
+   - Tiệm tài nguyên: Mua Năng Lượng (Energy) bằng Vàng, Đổi Gems lấy Vàng.
+   - Popup Vinh Danh Mở Rương: Hiển thị trang bị, phẩm chất, chỉ số thưởng, vàng & scrap.
+4. 📖 **Sổ Tay Quái Vật (Bestiary):**
+   - Thống kê trực tiếp từ tiến trình người chơi:
+     - Zombie Cà Rốt Cơ Bản (Thấp ★☆☆☆☆)
+     - Zombie Cà Rốt Tốc Độ (Trung Bình ★★☆☆☆)
+     - Cà Tím Hộ Vệ Tinh Anh (Cao ★★★★☆)
+     - King Carrot Chúa Tể (Cực Nguy Hiểm ★★★★★)
+   - Lưu trữ số lần chạm trán, số lần tiêu diệt, đặc tính và mẹo khắc chế.
+5. 👤 **Hồ Sơ & Thành Tựu (Profile & Achievements):**
+   - Thông tin Chiến binh: Cấp Thỏ, Tiến trình thanh kinh nghiệm XP, Thống kê tổng số màn hoàn thành, quái đã diệt, boss đã hạ.
+   - Danh sách Thành Tựu (Achievements): Cho phép người chơi nhận thưởng Vàng, Gems, Scrap, XP ngay khi hoàn thành chỉ tiêu.
+
