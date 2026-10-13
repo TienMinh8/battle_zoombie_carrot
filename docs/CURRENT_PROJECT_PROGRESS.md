@@ -134,3 +134,37 @@ Dựa trên tài liệu mở rộng `APOCARROT_Gameplay_Expansion_Design.md`, tr
 - **Khắc phục:** Đã bổ sung toàn bộ thuộc tính getter và helper method tương thích 100% vào `EquipmentItem.cs` và `AudioManager.cs`.
 - **Kết quả:** Unity 6 đã recompile toàn bộ Script Assemblies thành công (0 compiler errors, `Assembly-CSharp.dll` 247 KB được sinh hoàn tất). Trạng thái PlayMode sẵn sàng 100%.
 
+---
+
+## 6. NÂNG CẤP GIAO DIỆN TOÀN DIỆN CHUẨN MẪU THIẾT KẾ (UI REDESIGN BENCHMARK)
+Đã hoàn thành chuyển đổi toàn bộ giao diện từ dạng Greybox/Wireframe sang phong cách **Stylized 3D Action Roguelite cao cấp** chuẩn theo hình ảnh thiết kế mẫu:
+
+1. **Bộ Visual Assets & Nghệ Thuật UI Mới:**
+   - `avatar_rabbit_warrior`: Avatar Thỏ chiến binh khăn quàng đỏ oai phong cho Combat HUD & Sảnh.
+   - `pet_carrot_drone`: Trợ thủ Cà Rốt Drone đeo kính phi công bay lơ lửng hỗ trợ chiến đấu.
+   - `chest_golden_stageclear`: Rương báu vật hoàng kim tỏa sáng rực rỡ cho màn hình Chiến Thắng.
+   - `chest_royal_purple`: Rương tím hoàng gia mở nắp tung pháo hoa cho phần thưởng Mở Rương.
+   - `logo_apocarrot`: Logo 3D chữ cam viền vàng lá xanh phong cách hoạt hình cao cấp.
+   - `btn_play_glow`: Nút `PLAY` bo tròn capsule 3D phát sáng ánh vàng.
+   - `btn_attack_sword`: Nút tấn công `CHÉM` hình tròn rực lửa viền kim loại hoàng kim.
+
+2. **Dịch Vụ UI Tập Trung ([UISpriteService.cs](file:///Users/appdexter/Documents/lemonqueen/Apocarrot/My%20project/Assets/Scripts/UI/UISpriteService.cs)):**
+   - Tự động nạp và cache các texture đồ họa.
+   - Sinh procedural vector sprite bo góc (Rounded Box, Bevel Border, Vertical Gradients) mượt mà không vỡ hạt.
+   - Tự động sinh khung viền thẻ theo 5 cấp phẩm chất (Common xám, Great xanh lá, Rare xanh dương, Epic tím neon, Legendary vàng cam).
+
+3. **Tái Cấu Trúc Sảnh Chính ([HomeHubUI.cs](file:///Users/appdexter/Documents/lemonqueen/Apocarrot/My%20project/Assets/Scripts/UI/HomeHubUI.cs)):**
+   - **TopBar:** Logo game bên trái, các viên nhộng bo tròn hiển thị Cấp Thỏ, Năng lượng ⭐ 5/5, Vàng 💰 12,430, Gems 💎 320, Scrap ⚙️.
+   - **Cột Menu Trái:** 4 nút biểu tượng chuyên nghiệp (📜 Quest, 🏆 Bộ Sưu Tập, 🛒 Cửa Hàng, ⚙️ Cài Đặt).
+   - **Bục Đá Trung Tâm:** Trưng bày Thỏ Chiến Binh cùng Trợ thủ Cà Rốt Drone bay lượn đồng hành.
+   - **Cụm Hành Động Phải:** Banner Stage 3-1: Carrot Forest, hộp chỉ số ATK/HP/Tầm xa, và nút `PLAY` khổng lồ rực rỡ.
+   - **Kho Đồ & Modal Chi Tiết:** Các thẻ trang bị hiển thị sprite vũ khí chân thực, khung màu phẩm chất, huy hiệu Lv. Modal chi tiết bo góc có nút `TRANG BỊ` (Cyan), `NÂNG CẤP` (Gold), `PHÂN GIẢI` (Grey).
+   - **Rương Báu:** Thẻ rương 3D với hình ảnh rương vàng và rương tím; popup `YOU GOT!` mở nắp rương bung phần thưởng.
+
+4. **Tái Cấu Trúc Combat HUD & Màn Thắng ([ArenaSceneBootstrap.cs](file:///Users/appdexter/Documents/lemonqueen/Apocarrot/My%20project/Assets/Scripts/Arena/ArenaSceneBootstrap.cs)):**
+   - **Cụm Trạng Thái Góc Trên Trái:** Avatar Thỏ tròn viền vàng, huy hiệu `Lv.4`, thanh máu bo góc `850 / 1200 HP` gradient xanh lá, tiến độ wave.
+   - **Joystick Ảo:** Vòng tròn trong suốt và núm xoay vàng bóng bẩy.
+   - **Cụm Tấn Công:** Nút Chém kiếm lửa viền vàng nổi bật + Nút Lướt né tròn `⚡ LƯỚT`.
+   - **Màn Hình Stage Clear:** Tiêu đề `STAGE CLEAR! ⭐⭐⭐` 3 sao vàng, Rương vàng phát sáng ở trung tâm, thống kê chiến tích bên trái, phần thưởng & XP bên phải, nút `🎁 MỞ RƯƠNG BOSS` và `🏰 VỀ SẢNH CHÍNH`.
+
+

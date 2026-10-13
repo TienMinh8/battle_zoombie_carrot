@@ -507,6 +507,20 @@ namespace Apocarrot.Progression
             return success;
         }
 
+        public bool UpgradeCompanion(out string message)
+        {
+            message = "";
+            if (currentData == null) return false;
+            bool success = currentData.UpgradeCompanion(out message);
+            if (success)
+            {
+                SaveAccount();
+                OnAccountDataChanged?.Invoke();
+                Apocarrot.Audio.AudioManager.Instance?.PlayMergeSuccess();
+            }
+            return success;
+        }
+
         public bool ClaimAchievement(string achievementId, out int gold, out int gems, out int scrap, out int xp)
         {
             gold = 0; gems = 0; scrap = 0; xp = 0;

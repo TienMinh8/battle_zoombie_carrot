@@ -36,14 +36,24 @@ namespace Apocarrot.Gameplay
         public bool IsMoving => currentVelocity.sqrMagnitude > 0.05f;
 
         private PlayerHealth playerHealth;
+        private Apocarrot.Visuals.SpriteBillboard2D spriteBillboard;
 
         private void Awake()
         {
             characterController = GetComponent<CharacterController>();
             playerHealth = GetComponent<PlayerHealth>();
+            spriteBillboard = GetComponentInChildren<Apocarrot.Visuals.SpriteBillboard2D>();
             if (visualRoot == null)
             {
                 visualRoot = transform;
+            }
+        }
+
+        private void Start()
+        {
+            if (spriteBillboard == null)
+            {
+                spriteBillboard = GetComponentInChildren<Apocarrot.Visuals.SpriteBillboard2D>();
             }
         }
 
@@ -112,9 +122,14 @@ namespace Apocarrot.Gameplay
                 transform.position = pos;
             }
 
-            // 6. Quay mặt theo hướng di chuyển
-            if (inputDirection.sqrMagnitude > 0.01f)
+            // 6. Cập nhật hướng nhìn và hoạt ảnh Sprite 2.5D
+            if (spriteBillboard != null)
             {
+                spriteBillboard.SetMovementState(IsMoving, currentVelocity.x);
+            }
+            else if (inputDirection.sqrMagnitude > 0.01f && visualRoot != null)
+            {
+                // Fallback nếu dùng visual mesh 3D
                 Quaternion targetRotation = Quaternion.LookRotation(inputDirection, Vector3.up);
                 visualRoot.rotation = Quaternion.RotateTowards(
                     visualRoot.rotation,

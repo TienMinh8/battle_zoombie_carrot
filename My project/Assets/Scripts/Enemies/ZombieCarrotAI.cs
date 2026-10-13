@@ -42,11 +42,13 @@ namespace Apocarrot.Enemies
         private EnemyState currentState = EnemyState.Chase;
         private float stateTimer = 0f;
         private Vector3 originalVisualScale;
+        private Apocarrot.Visuals.SpriteBillboard2D spriteBillboard;
 
         private void Awake()
         {
             characterController = GetComponent<CharacterController>();
             health = GetComponent<EnemyHealth>();
+            spriteBillboard = GetComponentInChildren<Apocarrot.Visuals.SpriteBillboard2D>();
             if (visualRoot == null)
             {
                 visualRoot = transform;
@@ -56,6 +58,10 @@ namespace Apocarrot.Enemies
 
         private void Start()
         {
+            if (spriteBillboard == null)
+            {
+                spriteBillboard = GetComponentInChildren<Apocarrot.Visuals.SpriteBillboard2D>();
+            }
             FindPlayerTarget();
         }
 
@@ -98,8 +104,12 @@ namespace Apocarrot.Enemies
             toPlayer.y = 0;
             float distance = toPlayer.magnitude;
 
-            // Xoay mặt về phía thỏ
-            if (toPlayer.sqrMagnitude > 0.01f)
+            // Xoay mặt và hoạt ảnh 2.5D Sprite
+            if (spriteBillboard != null)
+            {
+                spriteBillboard.SetMovementState(true, toPlayer.x);
+            }
+            else if (toPlayer.sqrMagnitude > 0.01f)
             {
                 Quaternion targetRot = Quaternion.LookRotation(toPlayer.normalized, Vector3.up);
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
@@ -125,6 +135,11 @@ namespace Apocarrot.Enemies
         {
             currentState = EnemyState.Windup;
             stateTimer = windupDuration;
+
+            if (spriteBillboard != null)
+            {
+                spriteBillboard.SetMovementState(false, 0f);
+            }
 
             // Telegraph: phồng to người lên cảnh báo người chơi sắp bị cắn
             StartCoroutine(TelegraphScaleRoutine());
@@ -258,47 +273,21 @@ namespace Apocarrot.Enemies
             LootDropper dropper = enemy.AddComponent<LootDropper>();
             dropper.Initialize(data);
 
-            // Visual Root
-            GameObject visual = new GameObject("Visual_Root");
-            visual.transform.SetParent(enemy.transform, false);
-            visual.transform.localScale = Vector3.one * scale;
-            ai.visualRoot = visual.transform;
-            ai.originalVisualScale = visual.transform.localScale;
+            // Tạo hình thể 2.5D Sprite theo biến thể quái (Cà Rốt Thường, Cà Chua Nhanh, Cà Rốt Đột Biến)
+            Apocarrot.Visuals.CharacterSpriteType spriteType = Apocarrot.Visuals.CharacterSpriteType.ZombieCarrotBasic;
+            if (data.EnemyName.Contains("Fast") || data.EnemyName.Contains("Tomato"))
+            {
+                spriteType = Apocarrot.Visuals.CharacterSpriteType.ZombieCarrotFast;
+            }
+            else if (data.EnemyName.Contains("Elite") || data.EnemyName.Contains("Tank"))
+            {
+                spriteType = Apocarrot.Visuals.CharacterSpriteType.ZombieCarrotElite;
+            }
 
-            // Thân củ cà rốt (Màu sắc theo EnemyData)
-            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = "Body_Carrot";
-            body.transform.SetParent(visual.transform, false);
-            body.transform.localPosition = new Vector3(0, 0.8f, 0);
-            body.transform.localScale = new Vector3(0.7f, 0.8f, 0.7f);
-            Destroy(body.GetComponent<Collider>());
-            body.GetComponent<Renderer>().material.color = data.BodyColor;
-
-            // Cuống lá trên đầu (Màu theo EnemyData)
-            GameObject leaf = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            leaf.name = "Leaves_Green";
-            leaf.transform.SetParent(visual.transform, false);
-            leaf.transform.localPosition = new Vector3(0, 1.6f, 0);
-            leaf.transform.localScale = new Vector3(0.35f, 0.3f, 0.35f);
-            Destroy(leaf.GetComponent<Collider>());
-            leaf.GetComponent<Renderer>().material.color = data.LeafColor;
-
-            // Mắt Zombie phát sáng (Màu theo EnemyData)
-            GameObject eyeL = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            eyeL.name = "Eye_Left";
-            eyeL.transform.SetParent(visual.transform, false);
-            eyeL.transform.localPosition = new Vector3(-0.16f, 1.1f, 0.3f);
-            eyeL.transform.localScale = new Vector3(0.12f, 0.12f, 0.12f);
-            Destroy(eyeL.GetComponent<Collider>());
-            eyeL.GetComponent<Renderer>().material.color = data.EyeColor;
-
-            GameObject eyeR = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            eyeR.name = "Eye_Right";
-            eyeR.transform.SetParent(visual.transform, false);
-            eyeR.transform.localPosition = new Vector3(0.16f, 1.1f, 0.3f);
-            eyeR.transform.localScale = new Vector3(0.12f, 0.12f, 0.12f);
-            Destroy(eyeR.GetComponent<Collider>());
-            eyeR.GetComponent<Renderer>().material.color = data.EyeColor;
+            var billboard = Apocarrot.Visuals.SpriteCharacterFactory.AttachCharacterSprite(enemy, spriteType, new Vector3(0, 0.8f * scale, 0), scale * 1.15f);
+            ai.visualRoot = billboard != null ? billboard.transform : enemy.transform;
+            ai.originalVisualScale = ai.visualRoot.localScale;
+            ai.spriteBillboard = billboard;
 
             // Áp dụng chỉ số từ EnemyData
             ai.Configure(data);

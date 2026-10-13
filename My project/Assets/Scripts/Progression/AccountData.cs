@@ -108,8 +108,31 @@ namespace Apocarrot.Progression
         public EquipmentItem EquippedBoots;        // 👢 Giày Chạy (Swift Boots)
         public EquipmentItem EquippedBadge;        // 🥕 Huy Hiệu / Bảo Vật (Carrot Royal Badge)
 
+        [Header("Companion / Trợ Thủ Đồng Hành")]
+        public string ActiveCompanionId = "drone_carrot";
+        public int CompanionLevel = 5;
+        public int CompanionExp = 240;
+
         [Header("Bag Inventory (Túi đồ chứa các trang bị sở hữu)")]
         public List<EquipmentItem> OwnedEquipments = new List<EquipmentItem>();
+
+        public bool UpgradeCompanion(out string message)
+        {
+            int goldCost = CompanionLevel * 80;
+            int scrapCost = CompanionLevel * 3;
+
+            if (PermanentGold < goldCost || PermanentScrap < scrapCost)
+            {
+                message = $"⚠️ Không đủ tài nguyên! Cần {goldCost}💰 và {scrapCost}⚙️.";
+                return false;
+            }
+
+            PermanentGold -= goldCost;
+            PermanentScrap -= scrapCost;
+            CompanionLevel++;
+            message = $"🎉 Nâng cấp Trợ Thủ thành công lên Cấp {CompanionLevel}!";
+            return true;
+        }
 
         public static AccountData CreateDefault()
         {

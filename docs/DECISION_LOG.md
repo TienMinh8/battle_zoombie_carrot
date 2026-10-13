@@ -9,10 +9,10 @@ Status meanings:
 
 | Topic | Decision |
 |---|---|
-| Game identity | APOCARROT: Carrot Survival; 3D Action Roguelite / Arena Survival, wave-based combat, loot and weapon merging. |
-| Player character | Rabbit Warrior, based on art references. |
-| Main enemy/boss | Zombie Carrot variants; King Carrot is the demo boss. |
-| Camera | 3D top-down angled/3-4 camera following the rabbit. Not third-person behind-the-back, not side-scroller. |
+| Game identity | APOCARROT: Carrot Survival; 2D Action Roguelite / Arena Survival (Top-Down), wave-based combat, loot and weapon merging (Pivoted from 3D to 2D by Owner on 2026-10-13). |
+| Player character | Rabbit Warrior, based on art references (2D Sprites). |
+| Main enemy/boss | Zombie Carrot variants; King Carrot is the demo boss (2D Sprites). |
+| Camera | 2D top-down / 3/4 angled camera (Orthographic) following the rabbit. Not side-scroller. |
 | Player controls | Movement joystick + active melee attack button. |
 | Ranged weapons | No ranged-attack button. Equipped ranged weapon auto-targets and attacks when its own cooldown finishes. |
 | Active weapons | One equipped melee weapon and one equipped ranged weapon participate in combat at a time; other weapons are run-inventory reserve. |
@@ -22,8 +22,9 @@ Status meanings:
 | Merge | Two weapons of same type and same level merge into one of that type at the next level. |
 | Loss | Run-only gear is lost on defeat. Pre-owned account items, account level and recorded achievements persist. |
 | Account progression | Account-level rabbit XP, level milestones and achievements are long-term and saved locally. |
-| Art availability | Existing PNGs are concept references, not rigged 3D models. Use greybox meshes until proper 3D assets are available. |
+| Art availability | Transitioning from 3D greybox primitives to 2D Sprites using agent-sprite-forge pipeline. |
 | Scope | No multiplayer, monetization, ads, gacha, battle pass or complex live ops in P0. |
+| Dimension Pivot | **LOCKED (2026-10-13):** Transitioned from 3D to 2D Top-Down (XY plane) with SpriteRenderer to solve asset production bottlenecks while preserving 100% core gameplay, merge systems, and UI progression. |
 
 ## Provisional values for first playable build
 

@@ -87,6 +87,7 @@ namespace Apocarrot.Enemies
             Apocarrot.UI.DamagePopupManager.ShowDamage(transform.position, info.Amount, isCrit);
 
             // Hit flash
+            GetComponentInChildren<Apocarrot.Visuals.SpriteBillboard2D>()?.FlashDamage(hitFlashColor, 0.12f);
             StopCoroutine(nameof(HitFlashRoutine));
             StartCoroutine(nameof(HitFlashRoutine));
 

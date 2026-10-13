@@ -71,6 +71,7 @@ namespace Apocarrot.Enemies
         private Renderer bodyRenderer;
         private Renderer crownRenderer;
         private Color originalBodyColor;
+        private Apocarrot.Visuals.SpriteBillboard2D spriteBillboard;
 
         public bool IsEnraged => isEnraged;
 
@@ -78,6 +79,7 @@ namespace Apocarrot.Enemies
         {
             characterController = GetComponent<CharacterController>();
             health = GetComponent<EnemyHealth>();
+            spriteBillboard = GetComponentInChildren<Apocarrot.Visuals.SpriteBillboard2D>();
             health.OnHealthChanged += HandleHealthChanged;
             health.OnDied += HandleDied;
         }
@@ -130,8 +132,12 @@ namespace Apocarrot.Enemies
             toPlayer.y = 0;
             float distance = toPlayer.magnitude;
 
-            // Xoay mặt về phía thỏ
-            if (toPlayer.sqrMagnitude > 0.01f)
+            // Xoay mặt và hoạt ảnh 2.5D Sprite
+            if (spriteBillboard != null)
+            {
+                spriteBillboard.SetMovementState(true, toPlayer.x);
+            }
+            else if (toPlayer.sqrMagnitude > 0.01f)
             {
                 Quaternion targetRot = Quaternion.LookRotation(toPlayer.normalized, Vector3.up);
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
@@ -422,67 +428,11 @@ namespace Apocarrot.Enemies
 
             KingCarrotBossAI bossAI = boss.AddComponent<KingCarrotBossAI>();
 
-            // Visual Root
-            GameObject visual = new GameObject("Visual_Root");
-            visual.transform.SetParent(boss.transform, false);
-            visual.transform.localScale = Vector3.one * scale;
-            bossAI.visualRoot = visual.transform;
-
-            // Thân Cà Rốt Hoàng Đế (Màu cam sậm rực rỡ)
-            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = "Body_KingCarrot";
-            body.transform.SetParent(visual.transform, false);
-            body.transform.localPosition = new Vector3(0, 0.9f, 0);
-            body.transform.localScale = new Vector3(0.85f, 0.95f, 0.85f);
-            Destroy(body.GetComponent<Collider>());
-            bossAI.bodyRenderer = body.GetComponent<Renderer>();
-            bossAI.originalBodyColor = new Color(0.95f, 0.42f, 0.05f);
-            bossAI.bodyRenderer.material.color = bossAI.originalBodyColor;
-
-            // Vương Miện Vàng 👑 (Cylinder dẹt + chóp nhọn)
-            GameObject crown = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            crown.name = "Royal_Crown";
-            crown.transform.SetParent(visual.transform, false);
-            crown.transform.localPosition = new Vector3(0, 1.95f, 0);
-            crown.transform.localScale = new Vector3(0.6f, 0.18f, 0.6f);
-            Destroy(crown.GetComponent<Collider>());
-            bossAI.crownRenderer = crown.GetComponent<Renderer>();
-            bossAI.crownRenderer.material.color = new Color(1f, 0.84f, 0.0f); // Vàng gold 24k
-
-            // Viên hồng ngọc đính trên vương miện
-            GameObject ruby = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            ruby.name = "Crown_Ruby";
-            ruby.transform.SetParent(crown.transform, false);
-            ruby.transform.localPosition = new Vector3(0, 0.6f, 0.5f);
-            ruby.transform.localScale = new Vector3(0.25f, 0.35f, 0.25f);
-            Destroy(ruby.GetComponent<Collider>());
-            ruby.GetComponent<Renderer>().material.color = new Color(0.9f, 0.05f, 0.15f);
-
-            // Chùm Lá Xanh Hoàng Đế trên đỉnh đầu
-            GameObject leaves = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            leaves.name = "Royal_Leaves";
-            leaves.transform.SetParent(visual.transform, false);
-            leaves.transform.localPosition = new Vector3(0, 2.2f, 0);
-            leaves.transform.localScale = new Vector3(0.45f, 0.35f, 0.45f);
-            Destroy(leaves.GetComponent<Collider>());
-            leaves.GetComponent<Renderer>().material.color = new Color(0.12f, 0.72f, 0.25f);
-
-            // Đôi Mắt Zombie Quỷ Đỏ
-            GameObject eyeL = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            eyeL.name = "Eye_Left";
-            eyeL.transform.SetParent(visual.transform, false);
-            eyeL.transform.localPosition = new Vector3(-0.22f, 1.25f, 0.38f);
-            eyeL.transform.localScale = new Vector3(0.16f, 0.16f, 0.16f);
-            Destroy(eyeL.GetComponent<Collider>());
-            eyeL.GetComponent<Renderer>().material.color = new Color(1f, 0.1f, 0.15f);
-
-            GameObject eyeR = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            eyeR.name = "Eye_Right";
-            eyeR.transform.SetParent(visual.transform, false);
-            eyeR.transform.localPosition = new Vector3(0.22f, 1.25f, 0.38f);
-            eyeR.transform.localScale = new Vector3(0.16f, 0.16f, 0.16f);
-            Destroy(eyeR.GetComponent<Collider>());
-            eyeR.GetComponent<Renderer>().material.color = new Color(1f, 0.1f, 0.15f);
+            // Tạo hình thể 2.5D Sprite Boss King Carrot (Cà Rốt Hoàng Đế Vĩ Đại)
+            var billboard = Apocarrot.Visuals.SpriteCharacterFactory.AttachCharacterSprite(boss, Apocarrot.Visuals.CharacterSpriteType.KingCarrotBoss, new Vector3(0, 1.1f * scale, 0), scale * 1.35f);
+            bossAI.visualRoot = billboard != null ? billboard.transform : boss.transform;
+            bossAI.bodyRenderer = billboard != null ? billboard.Renderer : null;
+            bossAI.spriteBillboard = billboard;
 
             // Vòng tròn cảnh báo dậm đất Telegraph Ground Disc
             GameObject disc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);

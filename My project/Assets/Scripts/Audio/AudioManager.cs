@@ -136,6 +136,7 @@ namespace Apocarrot.Audio
 
         // ========================== PUBLIC SFX TRIGGERS ==========================
         public void PlayMeleeSwing() => PlaySFX(clipMeleeSwing, 0.65f, 0.08f);
+        public void PlayMeleeWhoosh() => PlayMeleeSwing();
         public void PlayMeleeHit() => PlaySFX(clipMeleeHit, 0.9f, 0.12f);
         public void PlayRangedShot() => PlaySFX(clipRangedShot, 0.75f, 0.06f);
         public void PlayEnemyDeath() => PlaySFX(clipEnemyDeath, 0.85f, 0.1f);

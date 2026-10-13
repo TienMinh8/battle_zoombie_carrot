@@ -63,9 +63,15 @@ namespace Apocarrot.UI
         [SerializeField] private Button[] equippedSlotButtons = new Button[8];
         [SerializeField] private Text[] equippedSlotTexts = new Text[8];
         [SerializeField] private Image[] equippedSlotBgs = new Image[8];
+        [SerializeField] private Image[] equippedSlotIcons = new Image[8];
+        [SerializeField] private Text loadoutCpText;
+        [SerializeField] private Text loadoutStatsText;
         [SerializeField] private Transform inventoryGridTransform;
         [SerializeField] private Button autoFuseButton;
         [SerializeField] private Button autoSalvageCommonButton;
+        [SerializeField] private Button[] inventoryFilterButtons = new Button[4];
+        [SerializeField] private Image[] inventoryFilterBgs = new Image[4];
+        private int currentInventoryFilter = 0;
 
         [Header("Equipment Detail Modal")]
         [SerializeField] private GameObject itemDetailModal;
@@ -96,8 +102,20 @@ namespace Apocarrot.UI
         [SerializeField] private Text rewardExtraText;
         [SerializeField] private Button rewardConfirmButton;
 
-        [Header("Bestiary Tab Specific")]
+        [Header("Bestiary / Companion Tab Specific")]
         [SerializeField] private Transform bestiaryListTransform;
+        [SerializeField] private GameObject companionViewRoot;
+        [SerializeField] private GameObject bestiaryViewRoot;
+        [SerializeField] private Text companionLevelText;
+        [SerializeField] private Text companionCpText;
+        [SerializeField] private Text companionStatsText;
+        [SerializeField] private Button companionUpgradeButton;
+        [SerializeField] private Text companionUpgradeBtnText;
+        [SerializeField] private Button tabCompanionToggleBtn;
+        [SerializeField] private Button tabBestiaryToggleBtn;
+        [SerializeField] private Image tabCompanionToggleBg;
+        [SerializeField] private Image tabBestiaryToggleBg;
+        private bool isViewingCompanionMode = true;
 
         [Header("Profile Tab Specific")]
         [SerializeField] private Text profileRabbitLevel;
@@ -190,6 +208,18 @@ namespace Apocarrot.UI
             {
                 autoSalvageCommonButton.onClick.AddListener(HandleAutoSalvageCommon);
             }
+            for (int f = 0; f < 4; f++)
+            {
+                int filterIdx = f;
+                if (inventoryFilterButtons[f] != null)
+                {
+                    inventoryFilterButtons[f].onClick.AddListener(() =>
+                    {
+                        currentInventoryFilter = filterIdx;
+                        RefreshEquipmentTab();
+                    });
+                }
+            }
 
             // Detail Modal
             if (detailCloseButton != null)
@@ -235,6 +265,28 @@ namespace Apocarrot.UI
             if (rewardConfirmButton != null)
             {
                 rewardConfirmButton.onClick.AddListener(() => { if (chestRewardPopup != null) chestRewardPopup.SetActive(false); });
+            }
+
+            // Companion & Bestiary Tab
+            if (tabCompanionToggleBtn != null)
+            {
+                tabCompanionToggleBtn.onClick.AddListener(() =>
+                {
+                    isViewingCompanionMode = true;
+                    RefreshBestiaryTab();
+                });
+            }
+            if (tabBestiaryToggleBtn != null)
+            {
+                tabBestiaryToggleBtn.onClick.AddListener(() =>
+                {
+                    isViewingCompanionMode = false;
+                    RefreshBestiaryTab();
+                });
+            }
+            if (companionUpgradeButton != null)
+            {
+                companionUpgradeButton.onClick.AddListener(HandleUpgradeCompanion);
             }
         }
 
@@ -369,30 +421,68 @@ namespace Apocarrot.UI
             var acc = AccountProgression.Instance?.Data;
             if (acc == null) return;
 
-            // 1. Cập nhật 8 ô trang bị
+            // 1. Tính tổng chỉ số trang bị và Lực chiến CP
+            int totalAtk = 25;
+            int totalHp = 100;
+            int totalDef = 0;
+            float totalSpd = 0f;
+
+            for (int i = 0; i < 8; i++)
+            {
+                var item = acc.GetEquippedItem((EquipmentSlotType)i);
+                if (item != null)
+                {
+                    totalAtk += item.GetTotalAttackBonus();
+                    totalHp += item.GetTotalHealthBonus();
+                    totalDef += item.ArmorBonus;
+                    totalSpd += item.MoveSpeedBonus;
+                }
+            }
+
+            int totalCp = totalAtk * 10 + totalHp * 2 + totalDef * 15 + (int)(totalSpd * 500) + acc.RabbitLevel * 50;
+            if (loadoutCpText != null) loadoutCpText.text = $"⚡ LỰC CHIẾN CP: {totalCp:N0}";
+            if (loadoutStatsText != null) loadoutStatsText.text = $"⚔️ {totalAtk} ATK   ❤️ {totalHp} HP   🛡️ {totalDef} DEF   👟 +{totalSpd * 100:F0}% SPD";
+
+            // 2. Cập nhật 8 ô trang bị đang mặc (Khung viền phẩm chất & Icon thật)
             for (int i = 0; i < 8; i++)
             {
                 EquipmentSlotType slot = (EquipmentSlotType)i;
                 EquipmentItem equipped = acc.GetEquippedItem(slot);
 
-                if (equippedSlotTexts[i] != null)
+                if (equipped != null)
                 {
-                    if (equipped != null)
+                    if (equippedSlotBgs[i] != null)
                     {
-                        equippedSlotTexts[i].text = $"{GetSlotShortName(slot)}\n<b>{equipped.DisplayName}</b>\n<color=#FFD700>Lv.{equipped.Level}</color>";
+                        equippedSlotBgs[i].sprite = UISpriteService.GetRarityCardSlot(equipped.Rarity, 160);
+                        equippedSlotBgs[i].color = Color.white;
                     }
-                    else
+                    if (equippedSlotIcons[i] != null)
                     {
-                        equippedSlotTexts[i].text = $"{GetSlotShortName(slot)}\n<color=#888888>(Trống)</color>";
+                        equippedSlotIcons[i].gameObject.SetActive(true);
+                        equippedSlotIcons[i].sprite = WeaponSpriteService.GetEquipmentSprite(equipped);
+                    }
+                    if (equippedSlotTexts[i] != null)
+                    {
+                        equippedSlotTexts[i].text = $"<b>{equipped.DisplayName}</b>\n<color=#FFD700>Lv.{equipped.Level}</color>";
+                    }
+                }
+                else
+                {
+                    if (equippedSlotBgs[i] != null)
+                    {
+                        equippedSlotBgs[i].sprite = UISpriteService.GetRarityCardSlot(EquipmentRarity.Common, 160);
+                        equippedSlotBgs[i].color = new Color(0.18f, 0.22f, 0.3f, 0.9f);
+                    }
+                    if (equippedSlotIcons[i] != null)
+                    {
+                        equippedSlotIcons[i].gameObject.SetActive(false);
+                    }
+                    if (equippedSlotTexts[i] != null)
+                    {
+                        equippedSlotTexts[i].text = $"{GetSlotShortName(slot)}\n<color=#778899>(Trống)</color>";
                     }
                 }
 
-                if (equippedSlotBgs[i] != null)
-                {
-                    equippedSlotBgs[i].color = equipped != null ? equipped.GetRarityColor() * 0.45f + Color.black * 0.55f : new Color(0.12f, 0.15f, 0.22f);
-                }
-
-                int slotIdx = i;
                 if (equippedSlotButtons[i] != null)
                 {
                     equippedSlotButtons[i].onClick.RemoveAllListeners();
@@ -403,10 +493,18 @@ namespace Apocarrot.UI
                 }
             }
 
-            // 2. Cập nhật Kho Đồ (Inventory Grid)
+            // 3. Cập nhật màu sắc 4 tab bộ lọc túi đồ
+            for (int f = 0; f < 4; f++)
+            {
+                if (inventoryFilterBgs[f] != null)
+                {
+                    inventoryFilterBgs[f].color = (f == currentInventoryFilter) ? new Color(0.18f, 0.55f, 0.95f) : new Color(0.12f, 0.15f, 0.22f);
+                }
+            }
+
+            // 4. Cập nhật Kho Đồ (Inventory Grid theo bộ lọc)
             if (inventoryGridTransform != null)
             {
-                // Clear old items
                 for (int i = inventoryGridTransform.childCount - 1; i >= 0; i--)
                 {
                     Destroy(inventoryGridTransform.GetChild(i).gameObject);
@@ -416,9 +514,28 @@ namespace Apocarrot.UI
                 {
                     foreach (var item in acc.OwnedEquipments)
                     {
-                        CreateInventoryItemCard(item);
+                        if (MatchesFilter(item, currentInventoryFilter))
+                        {
+                            CreateInventoryItemCard(item);
+                        }
                     }
                 }
+            }
+        }
+
+        private bool MatchesFilter(EquipmentItem item, int filter)
+        {
+            if (item == null) return false;
+            switch (filter)
+            {
+                case 1: // Vũ Khí
+                    return item.SlotType == EquipmentSlotType.Weapon || item.SlotType == EquipmentSlotType.RangedWeapon;
+                case 2: // Giáp & Trang Phục
+                    return item.SlotType == EquipmentSlotType.Armor || item.SlotType == EquipmentSlotType.Gloves || item.SlotType == EquipmentSlotType.Boots || item.SlotType == EquipmentSlotType.Belt;
+                case 3: // Phụ Kiện
+                    return item.SlotType == EquipmentSlotType.Necklace || item.SlotType == EquipmentSlotType.Badge;
+                default: // Tất Cả
+                    return true;
             }
         }
 
@@ -444,28 +561,66 @@ namespace Apocarrot.UI
             cardObj.transform.SetParent(inventoryGridTransform, false);
 
             RectTransform rt = cardObj.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(160, 110);
+            rt.sizeDelta = new Vector2(140, 140);
 
             Image bg = cardObj.AddComponent<Image>();
-            bg.color = item.GetRarityColor() * 0.4f + new Color(0.1f, 0.12f, 0.18f, 0.95f);
+            bg.sprite = UISpriteService.GetRarityCardSlot(item.Rarity, 140);
+            bg.color = Color.white;
 
             Button btn = cardObj.AddComponent<Button>();
             btn.onClick.AddListener(() => ShowItemDetail(item, isEquipped: false));
 
-            GameObject txtObj = new GameObject("Text");
-            txtObj.transform.SetParent(cardObj.transform, false);
-            RectTransform trt = txtObj.AddComponent<RectTransform>();
-            trt.anchorMin = Vector2.zero;
-            trt.anchorMax = Vector2.one;
-            trt.offsetMin = new Vector2(6, 6);
-            trt.offsetMax = new Vector2(-6, -6);
+            // Icon Vũ Khí / Trang Bị từ WeaponSpriteService
+            Sprite itemSprite = WeaponSpriteService.GetEquipmentSprite(item);
+            if (itemSprite != null)
+            {
+                GameObject iconObj = new GameObject("Icon");
+                iconObj.transform.SetParent(cardObj.transform, false);
+                RectTransform irt = iconObj.AddComponent<RectTransform>();
+                irt.anchorMin = new Vector2(0.5f, 0.5f);
+                irt.anchorMax = new Vector2(0.5f, 0.5f);
+                irt.pivot = new Vector2(0.5f, 0.5f);
+                irt.anchoredPosition = new Vector2(0, 8);
+                irt.sizeDelta = new Vector2(76, 76);
 
-            Text txt = txtObj.AddComponent<Text>();
-            txt.font = uiFont ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
-            txt.fontSize = 13;
-            txt.alignment = TextAnchor.MiddleCenter;
-            txt.color = Color.white;
-            txt.text = $"<b>{item.DisplayName}</b>\n<color=#{ColorUtility.ToHtmlStringRGB(item.GetRarityColor())}>{item.GetRarityName()}</color>\nLv.{item.Level}";
+                Image iconImg = iconObj.AddComponent<Image>();
+                iconImg.sprite = itemSprite;
+                iconImg.preserveAspect = true;
+            }
+
+            // Huy hiệu Cấp độ ở góc trên phải (Lv Badge)
+            GameObject lvlBadgeObj = new GameObject("LvlBadge");
+            lvlBadgeObj.transform.SetParent(cardObj.transform, false);
+            RectTransform lrt = lvlBadgeObj.AddComponent<RectTransform>();
+            lrt.anchorMin = new Vector2(1, 1);
+            lrt.anchorMax = new Vector2(1, 1);
+            lrt.pivot = new Vector2(1, 1);
+            lrt.anchoredPosition = new Vector2(-6, -6);
+            lrt.sizeDelta = new Vector2(46, 20);
+
+            Image lbg = lvlBadgeObj.AddComponent<Image>();
+            lbg.sprite = UISpriteService.CreateRoundedBox(46, 20, 10, new Color(0.1f, 0.12f, 0.18f, 0.9f), new Color(1f, 0.85f, 0.25f), 1);
+            lbg.color = Color.white;
+
+            Text ltxt = CreateTextElement(lvlBadgeObj, "Txt", Vector2.zero, Vector2.one, uiFont, 11, FontStyle.Bold, new Color(1f, 0.85f, 0.25f), $"Lv.{item.Level}");
+
+            // Tên hoặc Phẩm chất ở đáy thẻ
+            GameObject bottomObj = new GameObject("BottomLabel");
+            bottomObj.transform.SetParent(cardObj.transform, false);
+            RectTransform brt = bottomObj.AddComponent<RectTransform>();
+            brt.anchorMin = new Vector2(0, 0);
+            brt.anchorMax = new Vector2(1, 0);
+            brt.pivot = new Vector2(0.5f, 0);
+            brt.anchoredPosition = new Vector2(0, 6);
+            brt.sizeDelta = new Vector2(-12, 22);
+
+            Text btxt = bottomObj.AddComponent<Text>();
+            btxt.font = uiFont ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            btxt.fontSize = 11;
+            btxt.fontStyle = FontStyle.Bold;
+            btxt.alignment = TextAnchor.MiddleCenter;
+            btxt.color = item.GetRarityColor();
+            btxt.text = item.DisplayName;
         }
 
         private void ShowItemDetail(EquipmentItem item, bool isEquipped)
@@ -721,23 +876,78 @@ namespace Apocarrot.UI
             RefreshTopBar();
         }
 
-        // ========================== TAB 4: SỔ TAY QUÁI ==========================
+        // ========================== TAB 4: TRỢ THỦ & SỔ TAY QUÁI ==========================
         private void RefreshBestiaryTab()
         {
             var acc = AccountProgression.Instance?.Data;
-            if (acc == null || bestiaryListTransform == null) return;
+            if (acc == null) return;
 
-            // Clear old entries
-            for (int i = bestiaryListTransform.childCount - 1; i >= 0; i--)
+            // Chuyển đổi giữa 2 chế độ hiển thị
+            if (companionViewRoot != null) companionViewRoot.SetActive(isViewingCompanionMode);
+            if (bestiaryViewRoot != null) bestiaryViewRoot.SetActive(!isViewingCompanionMode);
+
+            if (tabCompanionToggleBg != null)
+                tabCompanionToggleBg.color = isViewingCompanionMode ? new Color(0.18f, 0.55f, 0.95f) : new Color(0.12f, 0.15f, 0.22f);
+            if (tabBestiaryToggleBg != null)
+                tabBestiaryToggleBg.color = !isViewingCompanionMode ? new Color(0.18f, 0.55f, 0.95f) : new Color(0.12f, 0.15f, 0.22f);
+
+            if (isViewingCompanionMode)
             {
-                Destroy(bestiaryListTransform.GetChild(i).gameObject);
+                int compLevel = acc.CompanionLevel;
+                int goldCost = compLevel * 80;
+                int scrapCost = compLevel * 3;
+                int petCp = compLevel * 120 + 80;
+
+                if (companionLevelText != null)
+                    companionLevelText.text = $"CẤP ĐỘ {compLevel}  (EXP: {acc.CompanionExp}/1000)";
+
+                if (companionCpText != null)
+                    companionCpText.text = $"⚡ LỰC CHIẾN PET: {petCp:N0} CP";
+
+                if (companionStatsText != null)
+                {
+                    int dmg = 25 + compLevel * 6;
+                    float interval = Mathf.Max(1.0f, 2.4f - compLevel * 0.04f);
+                    companionStatsText.text =
+                        $"⚔️ Sát thương tự động: +{dmg} DMG\n" +
+                        $"⏱️ Tần suất bắn: {interval:F1} giây / phát\n" +
+                        $"🎯 Tầm ngắm bắn: 8.5 mét\n" +
+                        $"🚀 Kỹ năng: Mưa Tên Lửa Cà Rốt (Tự Động Bắn Quái Gần Nhất)";
+                }
+
+                if (companionUpgradeBtnText != null)
+                {
+                    companionUpgradeBtnText.text = $"🚀 NÂNG CẤP TRỢ THỦ\n({goldCost}💰 + {scrapCost}⚙️)";
+                }
             }
-
-            if (acc.Bestiary == null) acc.InitializeDefaultBestiary();
-
-            foreach (var monster in acc.Bestiary)
+            else
             {
-                CreateBestiaryCard(monster);
+                if (bestiaryListTransform != null)
+                {
+                    for (int i = bestiaryListTransform.childCount - 1; i >= 0; i--)
+                    {
+                        Destroy(bestiaryListTransform.GetChild(i).gameObject);
+                    }
+
+                    if (acc.Bestiary == null) acc.InitializeDefaultBestiary();
+
+                    foreach (var monster in acc.Bestiary)
+                    {
+                        CreateBestiaryCard(monster);
+                    }
+                }
+            }
+        }
+
+        private void HandleUpgradeCompanion()
+        {
+            if (AccountProgression.Instance == null) return;
+            string msg;
+            bool success = AccountProgression.Instance.UpgradeCompanion(out msg);
+            ShowToast(msg);
+            if (success)
+            {
+                RefreshBestiaryTab();
             }
         }
 
@@ -943,7 +1153,7 @@ namespace Apocarrot.UI
             hub.hubRoot = root;
             hub.uiFont = defaultFont;
 
-            // 1. Top Bar (H 70, Top)
+            // 1. Top Bar Stylized (Logo + Viên Nhộng Tài Nguyên Vàng, Gems, Năng Lượng)
             GameObject topBar = new GameObject("TopBar");
             topBar.transform.SetParent(root.transform, false);
             RectTransform tbRt = topBar.AddComponent<RectTransform>();
@@ -951,17 +1161,48 @@ namespace Apocarrot.UI
             tbRt.anchorMax = new Vector2(1, 1);
             tbRt.pivot = new Vector2(0.5f, 1);
             tbRt.anchoredPosition = Vector2.zero;
-            tbRt.sizeDelta = new Vector2(0, 70);
+            tbRt.sizeDelta = new Vector2(0, 72);
 
             Image tbBg = topBar.AddComponent<Image>();
-            tbBg.color = new Color(0.10f, 0.12f, 0.18f, 0.98f);
+            tbBg.color = new Color(0.08f, 0.10f, 0.16f, 0.98f);
 
-            // Top Bar Elements: Profile Level, Energy, Gold, Gems, Scrap
-            hub.profileLevelText = CreateTextElement(topBar, "LvlText", new Vector2(0, 0), new Vector2(0.2f, 1), defaultFont, 16, FontStyle.Bold, new Color(1f, 0.85f, 0.2f), "CẤP 1 (Thỏ)");
-            hub.energyText = CreateTextElement(topBar, "EnergyText", new Vector2(0.22f, 0), new Vector2(0.4f, 1), defaultFont, 16, FontStyle.Bold, new Color(0.3f, 0.85f, 1f), "⚡ 20/20");
-            hub.goldText = CreateTextElement(topBar, "GoldText", new Vector2(0.42f, 0), new Vector2(0.6f, 1), defaultFont, 16, FontStyle.Bold, new Color(1f, 0.8f, 0.1f), "💰 150");
-            hub.gemsText = CreateTextElement(topBar, "GemsText", new Vector2(0.62f, 0), new Vector2(0.8f, 1), defaultFont, 16, FontStyle.Bold, new Color(0.3f, 1f, 0.5f), "💎 50");
-            hub.scrapText = CreateTextElement(topBar, "ScrapText", new Vector2(0.82f, 0), new Vector2(1.0f, 1), defaultFont, 16, FontStyle.Bold, new Color(0.9f, 0.6f, 1f), "⚙️ 20");
+            // Logo APOCARROT bên trái
+            GameObject logoObj = new GameObject("LogoImage");
+            logoObj.transform.SetParent(topBar.transform, false);
+            RectTransform logoRt = logoObj.AddComponent<RectTransform>();
+            logoRt.anchorMin = new Vector2(0, 0.5f);
+            logoRt.anchorMax = new Vector2(0, 0.5f);
+            logoRt.pivot = new Vector2(0, 0.5f);
+            logoRt.anchoredPosition = new Vector2(25, 0);
+            logoRt.sizeDelta = new Vector2(190, 56);
+            Image logoImg = logoObj.AddComponent<Image>();
+            logoImg.sprite = UISpriteService.GetLogoSprite();
+            logoImg.color = Color.white;
+
+            // Hàm tạo viên nhộng tài nguyên (Pill Badge) bo góc
+            Text CreateResourcePill(string name, float xPos, Color textColor, string defaultVal)
+            {
+                GameObject pillObj = new GameObject(name);
+                pillObj.transform.SetParent(topBar.transform, false);
+                RectTransform prt = pillObj.AddComponent<RectTransform>();
+                prt.anchorMin = new Vector2(1, 0.5f);
+                prt.anchorMax = new Vector2(1, 0.5f);
+                prt.pivot = new Vector2(1, 0.5f);
+                prt.anchoredPosition = new Vector2(xPos, 0);
+                prt.sizeDelta = new Vector2(140, 42);
+
+                Image pBg = pillObj.AddComponent<Image>();
+                pBg.sprite = UISpriteService.CreateRoundedBox(140, 42, 21, new Color(0.12f, 0.16f, 0.24f, 0.95f), new Color(0.24f, 0.32f, 0.48f), 2);
+                pBg.color = Color.white;
+
+                return CreateTextElement(pillObj, "Txt", Vector2.zero, Vector2.one, defaultFont, 14, FontStyle.Bold, textColor, defaultVal);
+            }
+
+            hub.scrapText = CreateResourcePill("Pill_Scrap", -25, new Color(0.9f, 0.65f, 1f), "⚙️ 20");
+            hub.gemsText = CreateResourcePill("Pill_Gems", -175, new Color(0.85f, 0.4f, 1f), "💎 320");
+            hub.goldText = CreateResourcePill("Pill_Gold", -325, new Color(1f, 0.85f, 0.25f), "💰 12,430");
+            hub.energyText = CreateResourcePill("Pill_Energy", -475, new Color(1f, 0.75f, 0.1f), "⭐ 5/5");
+            hub.profileLevelText = CreateResourcePill("Pill_Level", -625, new Color(0.35f, 0.95f, 0.5f), "CẤP 3");
 
             // 2. Bottom Nav Bar (H 75, Bottom)
             GameObject navBar = new GameObject("BottomNavBar");
@@ -1030,52 +1271,153 @@ namespace Apocarrot.UI
             RectTransform rt = tab.AddComponent<RectTransform>();
             rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
 
-            // Banner Chương 1
-            GameObject banner = new GameObject("ChapterBanner");
-            banner.transform.SetParent(tab.transform, false);
-            RectTransform brt = banner.AddComponent<RectTransform>();
-            brt.anchorMin = new Vector2(0.5f, 1f); brt.anchorMax = new Vector2(0.5f, 1f);
-            brt.pivot = new Vector2(0.5f, 1f);
-            brt.anchoredPosition = new Vector2(0, -25);
-            brt.sizeDelta = new Vector2(800, 150);
+            // ================= 1. CỘT TRÁI: 4 NÚT MENU (QUEST, COLLECTION, SHOP, SETTINGS) =================
+            GameObject leftMenu = new GameObject("Left_Sidebar_Menu");
+            leftMenu.transform.SetParent(tab.transform, false);
+            RectTransform lmRt = leftMenu.AddComponent<RectTransform>();
+            lmRt.anchorMin = new Vector2(0, 0.5f); lmRt.anchorMax = new Vector2(0, 0.5f);
+            lmRt.pivot = new Vector2(0, 0.5f);
+            lmRt.anchoredPosition = new Vector2(25, 20);
+            lmRt.sizeDelta = new Vector2(100, 380);
 
-            Image bBg = banner.AddComponent<Image>();
-            bBg.color = new Color(0.14f, 0.18f, 0.28f, 0.95f);
+            string[] sideNames = new string[] { "📜\nQuest", "🏆\nBộ Sưu Tập", "🛒\nCửa Hàng", "⚙️\nCài Đặt" };
+            for (int i = 0; i < 4; i++)
+            {
+                GameObject sbtn = new GameObject($"SideBtn_{i}");
+                sbtn.transform.SetParent(leftMenu.transform, false);
+                RectTransform srt = sbtn.AddComponent<RectTransform>();
+                srt.anchorMin = new Vector2(0.5f, 1f); srt.anchorMax = new Vector2(0.5f, 1f);
+                srt.pivot = new Vector2(0.5f, 1f);
+                srt.anchoredPosition = new Vector2(0, -i * 92);
+                srt.sizeDelta = new Vector2(86, 78);
 
-            CreateTextElement(banner, "Title", new Vector2(0, 0.5f), new Vector2(1, 1), font, 24, FontStyle.Bold, new Color(1f, 0.85f, 0.2f), "🌿 CHƯƠNG 1: KHU VƯỜN ĐỘT BIẾN");
-            CreateTextElement(banner, "Sub", new Vector2(0, 0), new Vector2(1, 0.55f), font, 15, FontStyle.Normal, new Color(0.85f, 0.9f, 1f), "Màn 1-1: Căn Cứ Cà Rốt • Thử thách 4 Đợt Quái & Trùm King Carrot\nTiêu diệt toàn bộ để mở khóa Rương Chúa Tể!");
+                Image sbImg = sbtn.AddComponent<Image>();
+                sbImg.sprite = UISpriteService.CreateRoundedBox(86, 78, 18, new Color(0.12f, 0.15f, 0.24f, 0.95f), new Color(0.24f, 0.30f, 0.45f), 3);
+                sbImg.color = Color.white;
+                Button b = sbtn.AddComponent<Button>();
 
-            // Stats Card
-            GameObject statsCard = new GameObject("StatsCard");
-            statsCard.transform.SetParent(tab.transform, false);
-            RectTransform srt = statsCard.AddComponent<RectTransform>();
-            srt.anchorMin = new Vector2(0.5f, 0.5f); srt.anchorMax = new Vector2(0.5f, 0.5f);
-            srt.pivot = new Vector2(0.5f, 0.5f);
-            srt.anchoredPosition = new Vector2(0, 30);
-            srt.sizeDelta = new Vector2(800, 220);
+                int tabIdx = i == 2 ? 2 : (i == 3 ? -1 : 0);
+                b.onClick.AddListener(() => {
+                    if (tabIdx >= 0) hub.SwitchTab((HomeHubTab)tabIdx);
+                    else if (PauseMenuUI.Instance != null) PauseMenuUI.Instance.TogglePause();
+                });
 
-            Image sBg = statsCard.AddComponent<Image>();
-            sBg.color = new Color(0.10f, 0.13f, 0.20f, 0.95f);
+                CreateTextElement(sbtn, "Txt", Vector2.zero, Vector2.one, font, 13, FontStyle.Bold, Color.white, sideNames[i]);
+            }
 
-            CreateTextElement(statsCard, "Header", new Vector2(0, 0.72f), new Vector2(1, 1), font, 18, FontStyle.Bold, new Color(0.3f, 0.95f, 0.6f), "🛡️ THỐNG KÊ CHIẾN LỰC THỎ CHIẾN BINH");
-            hub.heroAtkText = CreateTextElement(statsCard, "Atk", new Vector2(0.08f, 0.45f), new Vector2(0.92f, 0.72f), font, 16, FontStyle.Bold, Color.white, "⚔️ TỔNG SÁT THƯƠNG (ATK): 35");
-            hub.heroHpText = CreateTextElement(statsCard, "Hp", new Vector2(0.08f, 0.22f), new Vector2(0.92f, 0.48f), font, 16, FontStyle.Bold, Color.white, "❤️ TỔNG MÁU TỐI ĐA (HP): 100");
-            hub.heroRangedText = CreateTextElement(statsCard, "Ranged", new Vector2(0.08f, 0.02f), new Vector2(0.92f, 0.26f), font, 15, FontStyle.Normal, new Color(1f, 0.8f, 0.4f), "🏹 VŨ KHÍ TẦM XA: Súng Cà Chua (Lv.1)");
+            // ================= 2. TRUNG TÂM: KHUNG TRƯNG BÀY THỎ CHIẾN BINH & TRỢ THỦ CARROT DRONE =================
+            GameObject heroStage = new GameObject("Hero_Center_Stage");
+            heroStage.transform.SetParent(tab.transform, false);
+            RectTransform hsRt = heroStage.AddComponent<RectTransform>();
+            hsRt.anchorMin = new Vector2(0.5f, 0.5f); hsRt.anchorMax = new Vector2(0.5f, 0.5f);
+            hsRt.pivot = new Vector2(0.5f, 0.5f);
+            hsRt.anchoredPosition = new Vector2(-60, 20);
+            hsRt.sizeDelta = new Vector2(460, 480);
 
-            // Start Battle CTA Button
-            GameObject startBtnObj = new GameObject("StartBattle_Button");
-            startBtnObj.transform.SetParent(tab.transform, false);
-            RectTransform sbrt = startBtnObj.AddComponent<RectTransform>();
-            sbrt.anchorMin = new Vector2(0.5f, 0); sbrt.anchorMax = new Vector2(0.5f, 0);
-            sbrt.pivot = new Vector2(0.5f, 0);
-            sbrt.anchoredPosition = new Vector2(0, 35);
-            sbrt.sizeDelta = new Vector2(480, 68);
+            // Bục đá nhân vật (Pedestal circle)
+            GameObject pedestal = new GameObject("Pedestal");
+            pedestal.transform.SetParent(heroStage.transform, false);
+            RectTransform pdRt = pedestal.AddComponent<RectTransform>();
+            pdRt.anchorMin = new Vector2(0.5f, 0); pdRt.anchorMax = new Vector2(0.5f, 0);
+            pdRt.pivot = new Vector2(0.5f, 0);
+            pdRt.anchoredPosition = new Vector2(0, 30);
+            pdRt.sizeDelta = new Vector2(340, 90);
+            Image pdImg = pedestal.AddComponent<Image>();
+            pdImg.sprite = UISpriteService.CreateRoundedBox(340, 90, 45, new Color(0.15f, 0.18f, 0.28f, 0.95f), new Color(0.35f, 0.42f, 0.60f), 3);
+            pdImg.color = Color.white;
 
-            Image sbBg = startBtnObj.AddComponent<Image>();
-            sbBg.color = new Color(0.18f, 0.75f, 0.32f);
-            hub.startRunButton = startBtnObj.AddComponent<Button>();
+            // Hình ảnh Thỏ Chiến Binh 3D
+            GameObject heroImgObj = new GameObject("Hero_Avatar_Preview");
+            heroImgObj.transform.SetParent(heroStage.transform, false);
+            RectTransform hiRt = heroImgObj.AddComponent<RectTransform>();
+            hiRt.anchorMin = new Vector2(0.5f, 0.5f); hiRt.anchorMax = new Vector2(0.5f, 0.5f);
+            hiRt.pivot = new Vector2(0.5f, 0.5f);
+            hiRt.anchoredPosition = new Vector2(-30, 40);
+            hiRt.sizeDelta = new Vector2(280, 280);
+            Image hiImg = heroImgObj.AddComponent<Image>();
+            hiImg.sprite = UISpriteService.GetAvatarSprite();
+            hiImg.color = Color.white;
 
-            CreateTextElement(startBtnObj, "Text", Vector2.zero, Vector2.one, font, 22, FontStyle.Bold, Color.white, "▶ BẮT ĐẦU VƯỢT ẢI (5 ⚡) ◀");
+            // Trợ thủ Cà Rốt Drone (Bay lơ lửng bên phải Thỏ)
+            GameObject droneObj = new GameObject("Drone_Pet_Preview");
+            droneObj.transform.SetParent(heroStage.transform, false);
+            RectTransform drRt = droneObj.AddComponent<RectTransform>();
+            drRt.anchorMin = new Vector2(1, 0.5f); drRt.anchorMax = new Vector2(1, 0.5f);
+            drRt.pivot = new Vector2(0.5f, 0.5f);
+            drRt.anchoredPosition = new Vector2(40, 100);
+            drRt.sizeDelta = new Vector2(150, 150);
+            Image drImg = droneObj.AddComponent<Image>();
+            drImg.sprite = UISpriteService.GetPetDroneSprite();
+            drImg.color = Color.white;
+
+            // ================= 3. BÊN PHẢI: BANNER CHỌN ẢI & NÚT "PLAY" PHÁT SÁNG KHỔNG LỒ =================
+            GameObject rightPanel = new GameObject("Right_Action_Panel");
+            rightPanel.transform.SetParent(tab.transform, false);
+            RectTransform rpRt = rightPanel.AddComponent<RectTransform>();
+            rpRt.anchorMin = new Vector2(1, 0.5f); rpRt.anchorMax = new Vector2(1, 0.5f);
+            rpRt.pivot = new Vector2(1, 0.5f);
+            rpRt.anchoredPosition = new Vector2(-40, 20);
+            rpRt.sizeDelta = new Vector2(380, 480);
+
+            // Thẻ Stage Banner (Stage 3-1: Carrot Forest)
+            GameObject stageCard = new GameObject("StageBannerCard");
+            stageCard.transform.SetParent(rightPanel.transform, false);
+            RectTransform scRt = stageCard.AddComponent<RectTransform>();
+            scRt.anchorMin = new Vector2(0.5f, 1); scRt.anchorMax = new Vector2(0.5f, 1);
+            scRt.pivot = new Vector2(0.5f, 1);
+            scRt.anchoredPosition = new Vector2(0, -20);
+            scRt.sizeDelta = new Vector2(360, 150);
+
+            Image scBg = stageCard.AddComponent<Image>();
+            scBg.sprite = UISpriteService.CreateRoundedBox(360, 150, 20, new Color(0.12f, 0.15f, 0.24f, 0.95f), new Color(0.95f, 0.55f, 0.15f), 3);
+            scBg.color = Color.white;
+
+            CreateTextElement(stageCard, "StageTag", new Vector2(0.08f, 0.65f), new Vector2(0.92f, 0.92f), font, 20, FontStyle.Bold, new Color(1f, 0.88f, 0.35f), "💀 STAGE 3-1: CARROT FOREST");
+            CreateTextElement(stageCard, "Desc", new Vector2(0.08f, 0.12f), new Vector2(0.92f, 0.62f), font, 14, FontStyle.Normal, new Color(0.85f, 0.9f, 1f), "Thử thách: 4 Đợt Quái & Trùm King Carrot\nPhần thưởng: Rương Chúa Tể + 1,200 Vàng");
+
+            // Chỉ số tổng quan Thỏ
+            GameObject statsMini = new GameObject("Stats_Mini");
+            statsMini.transform.SetParent(rightPanel.transform, false);
+            RectTransform smRt = statsMini.AddComponent<RectTransform>();
+            smRt.anchorMin = new Vector2(0.5f, 1); smRt.anchorMax = new Vector2(0.5f, 1);
+            smRt.pivot = new Vector2(0.5f, 1);
+            smRt.anchoredPosition = new Vector2(0, -185);
+            smRt.sizeDelta = new Vector2(360, 120);
+
+            Image smBg = statsMini.AddComponent<Image>();
+            smBg.sprite = UISpriteService.CreateRoundedBox(360, 120, 16, new Color(0.09f, 0.12f, 0.18f, 0.92f), new Color(0.20f, 0.25f, 0.38f), 2);
+            smBg.color = Color.white;
+
+            hub.heroAtkText = CreateTextElement(statsMini, "Atk", new Vector2(0.06f, 0.64f), new Vector2(0.94f, 0.95f), font, 15, FontStyle.Bold, new Color(1f, 0.45f, 0.35f), "⚔️ TỔNG SÁT THƯƠNG (ATK): 35");
+            hub.heroHpText = CreateTextElement(statsMini, "Hp", new Vector2(0.06f, 0.34f), new Vector2(0.94f, 0.65f), font, 15, FontStyle.Bold, new Color(0.35f, 0.95f, 0.45f), "❤️ TỔNG MÁU TỐI ĐA (HP): 100");
+            hub.heroRangedText = CreateTextElement(statsMini, "Ranged", new Vector2(0.06f, 0.05f), new Vector2(0.94f, 0.34f), font, 14, FontStyle.Normal, new Color(1f, 0.82f, 0.35f), "🏹 TẦM XA: Súng Cà Chua (Lv.1)");
+
+            // NÚT PLAY KHỔNG LỒ RỰC RỠ (CTA BUTTON)
+            GameObject playBtnObj = new GameObject("Big_PLAY_Button");
+            playBtnObj.transform.SetParent(rightPanel.transform, false);
+            RectTransform pbRt = playBtnObj.AddComponent<RectTransform>();
+            pbRt.anchorMin = new Vector2(0.5f, 0); pbRt.anchorMax = new Vector2(0.5f, 0);
+            pbRt.pivot = new Vector2(0.5f, 0);
+            pbRt.anchoredPosition = new Vector2(0, 20);
+            pbRt.sizeDelta = new Vector2(340, 105);
+
+            Image pbBg = playBtnObj.AddComponent<Image>();
+            pbBg.sprite = UISpriteService.GetPlayButtonSprite();
+            pbBg.color = Color.white;
+            hub.startRunButton = playBtnObj.AddComponent<Button>();
+
+            // Nút chữ PLAY lớn
+            GameObject ptxtObj = new GameObject("Text");
+            ptxtObj.transform.SetParent(playBtnObj.transform, false);
+            Text ptxt = ptxtObj.AddComponent<Text>();
+            ptxt.font = font;
+            ptxt.fontSize = 34;
+            ptxt.fontStyle = FontStyle.Bold;
+            ptxt.alignment = TextAnchor.MiddleCenter;
+            ptxt.color = Color.white;
+            ptxt.text = "PLAY";
+            RectTransform ptxtRt = ptxtObj.GetComponent<RectTransform>();
+            ptxtRt.anchorMin = Vector2.zero; ptxtRt.anchorMax = Vector2.one; ptxtRt.sizeDelta = Vector2.zero;
 
             return tab;
         }
@@ -1087,81 +1429,232 @@ namespace Apocarrot.UI
             RectTransform rt = tab.AddComponent<RectTransform>();
             rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
 
-            // Top Area: 8 Equipped Slots (2 hàng 4 cột)
-            GameObject slotsPanel = new GameObject("EquippedSlotsPanel");
-            slotsPanel.transform.SetParent(tab.transform, false);
-            RectTransform sprt = slotsPanel.AddComponent<RectTransform>();
-            sprt.anchorMin = new Vector2(0.5f, 1); sprt.anchorMax = new Vector2(0.5f, 1);
-            sprt.pivot = new Vector2(0.5f, 1);
-            sprt.anchoredPosition = new Vector2(0, -15);
-            sprt.sizeDelta = new Vector2(800, 210);
+            // ================= 1. KHUNG TRƯNG BÀY ANH HÙNG & TRANG BỊ ĐANG MẶC (HERO LOADOUT) =================
+            GameObject loadoutCard = new GameObject("HeroLoadoutPanel");
+            loadoutCard.transform.SetParent(tab.transform, false);
+            RectTransform lcRt = loadoutCard.AddComponent<RectTransform>();
+            lcRt.anchorMin = new Vector2(0.5f, 1f); lcRt.anchorMax = new Vector2(0.5f, 1f);
+            lcRt.pivot = new Vector2(0.5f, 1f);
+            lcRt.anchoredPosition = new Vector2(0, -10);
+            lcRt.sizeDelta = new Vector2(860, 310);
 
-            Image spBg = slotsPanel.AddComponent<Image>();
-            spBg.color = new Color(0.09f, 0.12f, 0.18f, 0.95f);
+            Image lcBg = loadoutCard.AddComponent<Image>();
+            lcBg.sprite = UISpriteService.CreateRoundedBox(860, 310, 16, new Color(0.08f, 0.11f, 0.17f, 0.95f), new Color(0.18f, 0.35f, 0.65f, 0.7f), 2);
+            lcBg.color = Color.white;
 
-            CreateTextElement(slotsPanel, "Title", new Vector2(0, 0.82f), new Vector2(1, 1), font, 16, FontStyle.Bold, new Color(1f, 0.85f, 0.2f), "👑 TRANG BỊ ĐANG MẶC (8 Ô CHUẨN THỎ CHIẾN BINH)");
-
-            float slotW = 180; float slotH = 72;
-            for (int i = 0; i < 8; i++)
+            // --- CỘT TRÁI: 4 Ô TRANG BỊ (0: Cận chiến, 4: Áo giáp, 2: Dây chuyền, 6: Giày) ---
+            int[] leftSlots = new int[] { 0, 4, 2, 6 };
+            float slotW = 168f; float slotH = 62f;
+            for (int k = 0; k < 4; k++)
             {
-                int row = i / 4;
-                int col = i % 4;
-
-                GameObject slotObj = new GameObject($"Slot_{i}");
-                slotObj.transform.SetParent(slotsPanel.transform, false);
+                int slotIdx = leftSlots[k];
+                GameObject slotObj = new GameObject($"EquippedSlot_{slotIdx}");
+                slotObj.transform.SetParent(loadoutCard.transform, false);
                 RectTransform srt = slotObj.AddComponent<RectTransform>();
                 srt.anchorMin = new Vector2(0, 1); srt.anchorMax = new Vector2(0, 1);
                 srt.pivot = new Vector2(0, 1);
-                srt.anchoredPosition = new Vector2(18 + col * (slotW + 15), -45 - row * (slotH + 12));
+                srt.anchoredPosition = new Vector2(18, -16 - k * (slotH + 8));
                 srt.sizeDelta = new Vector2(slotW, slotH);
 
-                hub.equippedSlotBgs[i] = slotObj.AddComponent<Image>();
-                hub.equippedSlotBgs[i].color = new Color(0.14f, 0.18f, 0.26f);
-                hub.equippedSlotButtons[i] = slotObj.AddComponent<Button>();
-                hub.equippedSlotTexts[i] = CreateTextElement(slotObj, "Text", Vector2.zero, Vector2.one, font, 12, FontStyle.Normal, Color.white, $"Slot {i}");
+                hub.equippedSlotBgs[slotIdx] = slotObj.AddComponent<Image>();
+                hub.equippedSlotBgs[slotIdx].sprite = UISpriteService.GetRarityCardSlot(EquipmentRarity.Common, 160);
+                hub.equippedSlotBgs[slotIdx].color = Color.white;
+                hub.equippedSlotButtons[slotIdx] = slotObj.AddComponent<Button>();
+
+                // Icon ô đồ
+                GameObject iconObj = new GameObject("Icon");
+                iconObj.transform.SetParent(slotObj.transform, false);
+                RectTransform irt = iconObj.AddComponent<RectTransform>();
+                irt.anchorMin = new Vector2(0, 0.5f); irt.anchorMax = new Vector2(0, 0.5f);
+                irt.pivot = new Vector2(0, 0.5f);
+                irt.anchoredPosition = new Vector2(28, 0);
+                irt.sizeDelta = new Vector2(44, 44);
+                hub.equippedSlotIcons[slotIdx] = iconObj.AddComponent<Image>();
+                hub.equippedSlotIcons[slotIdx].preserveAspect = true;
+
+                // Text ô đồ
+                hub.equippedSlotTexts[slotIdx] = CreateTextElement(slotObj, "Text", new Vector2(0.36f, 0), new Vector2(0.96f, 1), font, 11, FontStyle.Bold, Color.white, $"Slot {slotIdx}");
+                hub.equippedSlotTexts[slotIdx].alignment = TextAnchor.MiddleLeft;
             }
 
-            // Quick Actions Bar (Auto Fuse, Salvage Common)
-            GameObject actionsBar = new GameObject("ActionsBar");
-            actionsBar.transform.SetParent(tab.transform, false);
-            RectTransform abrt = actionsBar.AddComponent<RectTransform>();
-            abrt.anchorMin = new Vector2(0.5f, 1); abrt.anchorMax = new Vector2(0.5f, 1);
-            abrt.pivot = new Vector2(0.5f, 1);
-            abrt.anchoredPosition = new Vector2(0, -235);
-            abrt.sizeDelta = new Vector2(800, 48);
+            // --- CỘT PHẢI: 4 Ô TRANG BỊ (1: Tầm xa, 3: Găng tay, 5: Thắt lưng, 7: Huy hiệu) ---
+            int[] rightSlots = new int[] { 1, 3, 5, 7 };
+            for (int k = 0; k < 4; k++)
+            {
+                int slotIdx = rightSlots[k];
+                GameObject slotObj = new GameObject($"EquippedSlot_{slotIdx}");
+                slotObj.transform.SetParent(loadoutCard.transform, false);
+                RectTransform srt = slotObj.AddComponent<RectTransform>();
+                srt.anchorMin = new Vector2(1, 1); srt.anchorMax = new Vector2(1, 1);
+                srt.pivot = new Vector2(1, 1);
+                srt.anchoredPosition = new Vector2(-18 - slotW, -16 - k * (slotH + 8));
+                srt.sizeDelta = new Vector2(slotW, slotH);
 
+                hub.equippedSlotBgs[slotIdx] = slotObj.AddComponent<Image>();
+                hub.equippedSlotBgs[slotIdx].sprite = UISpriteService.GetRarityCardSlot(EquipmentRarity.Common, 160);
+                hub.equippedSlotBgs[slotIdx].color = Color.white;
+                hub.equippedSlotButtons[slotIdx] = slotObj.AddComponent<Button>();
+
+                // Icon ô đồ
+                GameObject iconObj = new GameObject("Icon");
+                iconObj.transform.SetParent(slotObj.transform, false);
+                RectTransform irt = iconObj.AddComponent<RectTransform>();
+                irt.anchorMin = new Vector2(0, 0.5f); irt.anchorMax = new Vector2(0, 0.5f);
+                irt.pivot = new Vector2(0, 0.5f);
+                irt.anchoredPosition = new Vector2(28, 0);
+                irt.sizeDelta = new Vector2(44, 44);
+                hub.equippedSlotIcons[slotIdx] = iconObj.AddComponent<Image>();
+                hub.equippedSlotIcons[slotIdx].preserveAspect = true;
+
+                // Text ô đồ
+                hub.equippedSlotTexts[slotIdx] = CreateTextElement(slotObj, "Text", new Vector2(0.36f, 0), new Vector2(0.96f, 1), font, 11, FontStyle.Bold, Color.white, $"Slot {slotIdx}");
+                hub.equippedSlotTexts[slotIdx].alignment = TextAnchor.MiddleLeft;
+            }
+
+            // --- KHUNG TRUNG TÂM: BỆ ĐỠ ANH HÙNG (HERO PEDESTAL) ---
+            GameObject centerPedestal = new GameObject("CenterPedestal");
+            centerPedestal.transform.SetParent(loadoutCard.transform, false);
+            RectTransform cpRt = centerPedestal.AddComponent<RectTransform>();
+            cpRt.anchorMin = new Vector2(0.5f, 0.5f); cpRt.anchorMax = new Vector2(0.5f, 0.5f);
+            cpRt.pivot = new Vector2(0.5f, 0.5f);
+            cpRt.anchoredPosition = new Vector2(0, 0);
+            cpRt.sizeDelta = new Vector2(480, 290);
+
+            // Bệ đỡ phát sáng
+            GameObject ringObj = new GameObject("PedestalRing");
+            ringObj.transform.SetParent(centerPedestal.transform, false);
+            RectTransform rrt = ringObj.AddComponent<RectTransform>();
+            rrt.anchorMin = new Vector2(0.5f, 0.5f); rrt.anchorMax = new Vector2(0.5f, 0.5f);
+            rrt.pivot = new Vector2(0.5f, 0.5f);
+            rrt.anchoredPosition = new Vector2(0, 15);
+            rrt.sizeDelta = new Vector2(230, 48);
+            Image ringImg = ringObj.AddComponent<Image>();
+            ringImg.sprite = UISpriteService.CreateRoundedBox(230, 48, 24, new Color(0.12f, 0.35f, 0.75f, 0.45f), new Color(0.2f, 0.75f, 1f, 0.9f), 2);
+            ringImg.color = Color.white;
+
+            // Khung Avatar Thỏ Chiến Binh
+            GameObject avatarBox = new GameObject("HeroAvatar");
+            avatarBox.transform.SetParent(centerPedestal.transform, false);
+            RectTransform avRt = avatarBox.AddComponent<RectTransform>();
+            avRt.anchorMin = new Vector2(0.5f, 0.5f); avRt.anchorMax = new Vector2(0.5f, 0.5f);
+            avRt.pivot = new Vector2(0.5f, 0.5f);
+            avRt.anchoredPosition = new Vector2(0, 52);
+            avRt.sizeDelta = new Vector2(130, 130);
+            Image avImg = avatarBox.AddComponent<Image>();
+            avImg.sprite = UISpriteService.GetAvatarSprite();
+            avImg.preserveAspect = true;
+
+            // Nút xoay trái ◀ và phải ▶
+            GameObject rotL = new GameObject("RotateLeft");
+            rotL.transform.SetParent(centerPedestal.transform, false);
+            RectTransform rlRt = rotL.AddComponent<RectTransform>();
+            rlRt.anchoredPosition = new Vector2(-95, 52); rlRt.sizeDelta = new Vector2(36, 36);
+            Image rlBg = rotL.AddComponent<Image>();
+            rlBg.sprite = UISpriteService.CreateCircle(36, new Color(0.15f, 0.2f, 0.3f, 0.8f), new Color(1f, 0.8f, 0.2f), 1);
+            Button rlBtn = rotL.AddComponent<Button>();
+            CreateTextElement(rotL, "Txt", Vector2.zero, Vector2.one, font, 16, FontStyle.Bold, Color.white, "◀");
+
+            GameObject rotR = new GameObject("RotateRight");
+            rotR.transform.SetParent(centerPedestal.transform, false);
+            RectTransform rrRt = rotR.AddComponent<RectTransform>();
+            rrRt.anchoredPosition = new Vector2(95, 52); rrRt.sizeDelta = new Vector2(36, 36);
+            Image rrBg = rotR.AddComponent<Image>();
+            rrBg.sprite = UISpriteService.CreateCircle(36, new Color(0.15f, 0.2f, 0.3f, 0.8f), new Color(1f, 0.8f, 0.2f), 1);
+            Button rrBtn = rotR.AddComponent<Button>();
+            CreateTextElement(rotR, "Txt", Vector2.zero, Vector2.one, font, 16, FontStyle.Bold, Color.white, "▶");
+
+            // Tên Anh Hùng
+            CreateTextElement(centerPedestal, "HeroName", new Vector2(0.1f, 0.5f), new Vector2(0.9f, 0.5f), font, 16, FontStyle.Bold, new Color(1f, 0.85f, 0.25f), "🐰 CHIẾN BINH THỎ APOCARROT")
+                .rectTransform.anchoredPosition = new Vector2(0, -28);
+
+            // Viên nhộng Lực Chiến (CP Pill)
+            GameObject cpPill = new GameObject("CpPill");
+            cpPill.transform.SetParent(centerPedestal.transform, false);
+            RectTransform cpRt2 = cpPill.AddComponent<RectTransform>();
+            cpRt2.anchorMin = new Vector2(0.5f, 0.5f); cpRt2.anchorMax = new Vector2(0.5f, 0.5f);
+            cpRt2.pivot = new Vector2(0.5f, 0.5f);
+            cpRt2.anchoredPosition = new Vector2(0, -58);
+            cpRt2.sizeDelta = new Vector2(250, 28);
+            Image cpBg = cpPill.AddComponent<Image>();
+            cpBg.sprite = UISpriteService.CreateRoundedBox(250, 28, 14, new Color(0.1f, 0.15f, 0.25f, 0.9f), new Color(1f, 0.85f, 0.2f), 1);
+            hub.loadoutCpText = CreateTextElement(cpPill, "CpTxt", Vector2.zero, Vector2.one, font, 13, FontStyle.Bold, new Color(1f, 0.9f, 0.3f), "⚡ LỰC CHIẾN CP: 1,450");
+
+            // Dòng tóm tắt chỉ số (Stats Text)
+            hub.loadoutStatsText = CreateTextElement(centerPedestal, "StatsSummary", new Vector2(0, 0.5f), new Vector2(1, 0.5f), font, 12, FontStyle.Normal, new Color(0.85f, 0.92f, 1f), "⚔️ 345 ATK   ❤️ 1,280 HP   🛡️ 85 DEF   👟 +15% SPD");
+            hub.loadoutStatsText.rectTransform.anchoredPosition = new Vector2(0, -88);
+            hub.loadoutStatsText.rectTransform.sizeDelta = new Vector2(460, 24);
+
+            // ================= 2. THANH BỘ LỌC TÚI ĐỒ & THAO TÁC NHANH (FILTER & QUICK ACTIONS) =================
+            GameObject filterBar = new GameObject("FilterAndActionsBar");
+            filterBar.transform.SetParent(tab.transform, false);
+            RectTransform fbRt = filterBar.AddComponent<RectTransform>();
+            fbRt.anchorMin = new Vector2(0.5f, 1f); fbRt.anchorMax = new Vector2(0.5f, 1f);
+            fbRt.pivot = new Vector2(0.5f, 1f);
+            fbRt.anchoredPosition = new Vector2(0, -325);
+            fbRt.sizeDelta = new Vector2(860, 42);
+
+            // 4 Nút bộ lọc: [Tất cả] [Vũ khí] [Giáp] [Phụ kiện]
+            string[] filterNames = new string[] { "TẤT CẢ", "⚔️ VŨ KHÍ", "🛡️ GIÁP", "📿 PHỤ KIỆN" };
+            float fBtnW = 100f;
+            for (int f = 0; f < 4; f++)
+            {
+                int fIdx = f;
+                GameObject fbtn = new GameObject($"FilterBtn_{f}");
+                fbtn.transform.SetParent(filterBar.transform, false);
+                RectTransform fbrt = fbtn.AddComponent<RectTransform>();
+                fbrt.anchorMin = new Vector2(0, 0.5f); fbrt.anchorMax = new Vector2(0, 0.5f);
+                fbrt.pivot = new Vector2(0, 0.5f);
+                fbrt.anchoredPosition = new Vector2(f * (fBtnW + 8), 0);
+                fbrt.sizeDelta = new Vector2(fBtnW, 36);
+
+                Image fbg = fbtn.AddComponent<Image>();
+                fbg.sprite = UISpriteService.CreateRoundedBox((int)fBtnW, 36, 12, new Color(0.12f, 0.15f, 0.22f), new Color(0.25f, 0.35f, 0.5f), 1);
+                fbg.color = Color.white;
+                Button fb = fbtn.AddComponent<Button>();
+
+                Text ftxt = CreateTextElement(fbtn, "Txt", Vector2.zero, Vector2.one, font, 11, FontStyle.Bold, Color.white, filterNames[f]);
+
+                hub.inventoryFilterButtons[f] = fb;
+                hub.inventoryFilterBgs[f] = fbg;
+            }
+
+            // Nút Auto Fuse (Bên phải)
             GameObject fuseBtnObj = new GameObject("AutoFuseBtn");
-            fuseBtnObj.transform.SetParent(actionsBar.transform, false);
-            RectTransform fbrt = fuseBtnObj.AddComponent<RectTransform>();
-            fbrt.anchorMin = new Vector2(0, 0); fbrt.anchorMax = new Vector2(0.48f, 1);
-            fbrt.offsetMin = Vector2.zero; fbrt.offsetMax = Vector2.zero;
-            Image fbBg = fuseBtnObj.AddComponent<Image>();
-            fbBg.color = new Color(0.18f, 0.55f, 0.85f);
+            fuseBtnObj.transform.SetParent(filterBar.transform, false);
+            RectTransform afRt = fuseBtnObj.AddComponent<RectTransform>();
+            afRt.anchorMin = new Vector2(1, 0.5f); afRt.anchorMax = new Vector2(1, 0.5f);
+            afRt.pivot = new Vector2(1, 0.5f);
+            afRt.anchoredPosition = new Vector2(-195, 0);
+            afRt.sizeDelta = new Vector2(185, 36);
+            Image afBg = fuseBtnObj.AddComponent<Image>();
+            afBg.sprite = UISpriteService.CreateGradientBox(185, 36, 12, new Color(0.18f, 0.55f, 0.95f), new Color(0.1f, 0.35f, 0.75f), Color.white, 1);
             hub.autoFuseButton = fuseBtnObj.AddComponent<Button>();
-            CreateTextElement(fuseBtnObj, "Text", Vector2.zero, Vector2.one, font, 15, FontStyle.Bold, Color.white, "🧬 GHÉP ĐỒ TỰ ĐỘNG (FUSE)");
+            CreateTextElement(fuseBtnObj, "Text", Vector2.zero, Vector2.one, font, 12, FontStyle.Bold, Color.white, "🧬 GHÉP ĐỒ TỰ ĐỘNG");
 
+            // Nút Auto Salvage (Góc phải cùng)
             GameObject salvBtnObj = new GameObject("SalvageBtn");
-            salvBtnObj.transform.SetParent(actionsBar.transform, false);
-            RectTransform sbrt = salvBtnObj.AddComponent<RectTransform>();
-            sbrt.anchorMin = new Vector2(0.52f, 0); sbrt.anchorMax = new Vector2(1, 1);
-            sbrt.offsetMin = Vector2.zero; sbrt.offsetMax = Vector2.zero;
-            Image sbBg = salvBtnObj.AddComponent<Image>();
-            sbBg.color = new Color(0.85f, 0.35f, 0.18f);
+            salvBtnObj.transform.SetParent(filterBar.transform, false);
+            RectTransform asRt = salvBtnObj.AddComponent<RectTransform>();
+            asRt.anchorMin = new Vector2(1, 0.5f); asRt.anchorMax = new Vector2(1, 0.5f);
+            asRt.pivot = new Vector2(1, 0.5f);
+            asRt.anchoredPosition = new Vector2(0, 0);
+            asRt.sizeDelta = new Vector2(185, 36);
+            Image asBg = salvBtnObj.AddComponent<Image>();
+            asBg.sprite = UISpriteService.CreateGradientBox(185, 36, 12, new Color(0.85f, 0.35f, 0.18f), new Color(0.6f, 0.2f, 0.1f), Color.white, 1);
             hub.autoSalvageCommonButton = salvBtnObj.AddComponent<Button>();
-            CreateTextElement(salvBtnObj, "Text", Vector2.zero, Vector2.one, font, 15, FontStyle.Bold, Color.white, "🔨 PHÂN GIẢI ĐỒ THƯỜNG (SALVAGE ⚙️)");
+            CreateTextElement(salvBtnObj, "Text", Vector2.zero, Vector2.one, font, 12, FontStyle.Bold, Color.white, "🔨 PHÂN GIẢI THƯỜNG");
 
-            // Bottom Area: Scrollable Inventory Grid
+            // ================= 3. KHU VỰC CUỘN KHO ĐỒ (INVENTORY SCROLL VIEW) =================
             GameObject scrollObj = new GameObject("InventoryScrollView");
             scrollObj.transform.SetParent(tab.transform, false);
             RectTransform scrt = scrollObj.AddComponent<RectTransform>();
             scrt.anchorMin = new Vector2(0.5f, 0); scrt.anchorMax = new Vector2(0.5f, 1);
             scrt.pivot = new Vector2(0.5f, 0.5f);
-            scrt.anchoredPosition = new Vector2(0, -145);
-            scrt.sizeDelta = new Vector2(800, 400);
+            scrt.anchoredPosition = new Vector2(0, -195);
+            scrt.sizeDelta = new Vector2(860, 260);
 
             ScrollRect sr = scrollObj.AddComponent<ScrollRect>();
-            sr.horizontal = false;
-            sr.vertical = true;
+            sr.horizontal = false; sr.vertical = true;
 
             GameObject viewport = new GameObject("Viewport");
             viewport.transform.SetParent(scrollObj.transform, false);
@@ -1181,9 +1674,9 @@ namespace Apocarrot.UI
             crt.sizeDelta = new Vector2(0, 500);
 
             GridLayoutGroup glg = content.AddComponent<GridLayoutGroup>();
-            glg.cellSize = new Vector2(178, 105);
-            glg.spacing = new Vector2(16, 16);
-            glg.padding = new RectOffset(16, 16, 16, 16);
+            glg.cellSize = new Vector2(136, 136);
+            glg.spacing = new Vector2(14, 14);
+            glg.padding = new RectOffset(12, 12, 12, 12);
             glg.childAlignment = TextAnchor.UpperLeft;
 
             ContentSizeFitter csf = content.AddComponent<ContentSizeFitter>();
@@ -1233,19 +1726,35 @@ namespace Apocarrot.UI
                 crt.sizeDelta = new Vector2(cardW, cardH);
 
                 Image cBg = card.AddComponent<Image>();
-                cBg.color = cardColors[i];
+                Color borderCol = i == 2 ? new Color(0.9f, 0.45f, 1f) : (i == 1 ? new Color(0.35f, 0.7f, 1f) : new Color(0.95f, 0.65f, 0.2f));
+                cBg.sprite = UISpriteService.CreateRoundedBox((int)cardW, (int)cardH, 20, cardColors[i], borderCol, 3);
+                cBg.color = Color.white;
 
-                CreateTextElement(card, "Title", new Vector2(0, 0.72f), new Vector2(1, 0.96f), font, 16, FontStyle.Bold, Color.yellow, chestTitles[i]);
-                CreateTextElement(card, "Odds", new Vector2(0.05f, 0.28f), new Vector2(0.95f, 0.70f), font, 14, FontStyle.Normal, new Color(0.9f, 0.95f, 1f), $"Tỷ lệ rơi đồ:\n{chestOdds[i]}");
+                CreateTextElement(card, "Title", new Vector2(0, 0.78f), new Vector2(1, 0.96f), font, 16, FontStyle.Bold, Color.yellow, chestTitles[i]);
+
+                // Hình Ảnh Rương 3D Phát Sáng
+                GameObject cImgObj = new GameObject("ChestImage");
+                cImgObj.transform.SetParent(card.transform, false);
+                RectTransform cirt = cImgObj.AddComponent<RectTransform>();
+                cirt.anchorMin = new Vector2(0.5f, 0.5f); cirt.anchorMax = new Vector2(0.5f, 0.5f);
+                cirt.pivot = new Vector2(0.5f, 0.5f);
+                cirt.anchoredPosition = new Vector2(0, 15);
+                cirt.sizeDelta = new Vector2(120, 120);
+                Image cimg = cImgObj.AddComponent<Image>();
+                cimg.sprite = i == 2 ? UISpriteService.GetChestPurpleSprite() : UISpriteService.GetChestGoldenSprite();
+                cimg.color = Color.white;
+
+                CreateTextElement(card, "Odds", new Vector2(0.05f, 0.24f), new Vector2(0.95f, 0.42f), font, 12, FontStyle.Normal, new Color(0.9f, 0.95f, 1f), $"Tỷ lệ: {chestOdds[i].Replace("\n", " • ")}");
 
                 GameObject openBtn = new GameObject("OpenBtn");
                 openBtn.transform.SetParent(card.transform, false);
                 RectTransform obrt = openBtn.AddComponent<RectTransform>();
-                obrt.anchorMin = new Vector2(0.1f, 0.08f); obrt.anchorMax = new Vector2(0.9f, 0.24f);
+                obrt.anchorMin = new Vector2(0.1f, 0.05f); obrt.anchorMax = new Vector2(0.9f, 0.20f);
                 obrt.offsetMin = Vector2.zero; obrt.offsetMax = Vector2.zero;
 
                 Image obBg = openBtn.AddComponent<Image>();
-                obBg.color = i == 0 ? new Color(0.2f, 0.65f, 0.35f) : (i == 1 ? new Color(0.2f, 0.5f, 0.85f) : new Color(0.75f, 0.2f, 0.85f));
+                obBg.sprite = UISpriteService.GetActionButtonSprite("openchest", 190, 46);
+                obBg.color = Color.white;
                 Button b = openBtn.AddComponent<Button>();
                 CreateTextElement(openBtn, "Text", Vector2.zero, Vector2.one, font, 16, FontStyle.Bold, Color.white, btnLabels[i]);
 
@@ -1291,20 +1800,168 @@ namespace Apocarrot.UI
 
         private static GameObject BuildBestiaryTab(GameObject parent, Font font, HomeHubUI hub)
         {
-            GameObject tab = new GameObject("Tab_Bestiary");
+            GameObject tab = new GameObject("Tab_BestiaryAndCompanion");
             tab.transform.SetParent(parent.transform, false);
             RectTransform rt = tab.AddComponent<RectTransform>();
             rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
 
-            CreateTextElement(tab, "Header", new Vector2(0, 0.88f), new Vector2(1, 0.98f), font, 22, FontStyle.Bold, new Color(1f, 0.85f, 0.2f), "📖 SỔ TAY QUÁI VẬT (BESTIARY)");
+            // ================= 1. SUB-HEADER CHUYỂN ĐỔI: TRỢ THỦ ĐỒNG HÀNH & SỔ TAY QUÁI =================
+            GameObject subNav = new GameObject("SubNavBar");
+            subNav.transform.SetParent(tab.transform, false);
+            RectTransform snRt = subNav.AddComponent<RectTransform>();
+            snRt.anchorMin = new Vector2(0.5f, 1f); snRt.anchorMax = new Vector2(0.5f, 1f);
+            snRt.pivot = new Vector2(0.5f, 1f);
+            snRt.anchoredPosition = new Vector2(0, -10);
+            snRt.sizeDelta = new Vector2(820, 44);
+
+            // Nút 1: Trợ Thủ Đồng Hành
+            GameObject btnComp = new GameObject("Btn_Companion");
+            btnComp.transform.SetParent(subNav.transform, false);
+            RectTransform bcRt = btnComp.AddComponent<RectTransform>();
+            bcRt.anchorMin = new Vector2(0, 0); bcRt.anchorMax = new Vector2(0.49f, 1);
+            bcRt.offsetMin = Vector2.zero; bcRt.offsetMax = Vector2.zero;
+            hub.tabCompanionToggleBg = btnComp.AddComponent<Image>();
+            hub.tabCompanionToggleBg.sprite = UISpriteService.CreateRoundedBox(400, 44, 14, new Color(0.18f, 0.55f, 0.95f), new Color(1f, 0.85f, 0.2f), 1);
+            hub.tabCompanionToggleBtn = btnComp.AddComponent<Button>();
+            CreateTextElement(btnComp, "Txt", Vector2.zero, Vector2.one, font, 14, FontStyle.Bold, Color.white, "🛸 TRỢ THỦ ĐỒNG HÀNH (CARROT DRONE)");
+
+            // Nút 2: Sổ Tay Quái Vật
+            GameObject btnBest = new GameObject("Btn_Bestiary");
+            btnBest.transform.SetParent(subNav.transform, false);
+            RectTransform bbRt = btnBest.AddComponent<RectTransform>();
+            bbRt.anchorMin = new Vector2(0.51f, 0); bbRt.anchorMax = new Vector2(1, 1);
+            bbRt.offsetMin = Vector2.zero; bbRt.offsetMax = Vector2.zero;
+            hub.tabBestiaryToggleBg = btnBest.AddComponent<Image>();
+            hub.tabBestiaryToggleBg.sprite = UISpriteService.CreateRoundedBox(400, 44, 14, new Color(0.12f, 0.15f, 0.22f), new Color(0.3f, 0.4f, 0.6f), 1);
+            hub.tabBestiaryToggleBtn = btnBest.AddComponent<Button>();
+            CreateTextElement(btnBest, "Txt", Vector2.zero, Vector2.one, font, 14, FontStyle.Bold, Color.white, "📖 SỔ TAY QUÁI VẬT (BESTIARY)");
+
+            // ================= 2. SUB-VIEW A: TRỢ THỦ ĐỒNG HÀNH (COMPANION VIEW) =================
+            GameObject compView = new GameObject("View_Companion");
+            compView.transform.SetParent(tab.transform, false);
+            RectTransform cvRt = compView.AddComponent<RectTransform>();
+            cvRt.anchorMin = Vector2.zero; cvRt.anchorMax = Vector2.one;
+            cvRt.offsetMin = new Vector2(0, 0); cvRt.offsetMax = new Vector2(0, -60);
+            hub.companionViewRoot = compView;
+
+            // Khung Bệ Đỡ Carrot Drone
+            GameObject droneStage = new GameObject("DroneStage");
+            droneStage.transform.SetParent(compView.transform, false);
+            RectTransform dsRt = droneStage.AddComponent<RectTransform>();
+            dsRt.anchorMin = new Vector2(0.5f, 1f); dsRt.anchorMax = new Vector2(0.5f, 1f);
+            dsRt.pivot = new Vector2(0.5f, 1f);
+            dsRt.anchoredPosition = new Vector2(0, -10);
+            dsRt.sizeDelta = new Vector2(820, 240);
+
+            Image dsBg = droneStage.AddComponent<Image>();
+            dsBg.sprite = UISpriteService.CreateRoundedBox(820, 240, 18, new Color(0.08f, 0.12f, 0.18f, 0.95f), new Color(0.15f, 0.5f, 0.85f, 0.7f), 2);
+            dsBg.color = Color.white;
+
+            // Bệ phát sáng tròn
+            GameObject pRing = new GameObject("GlowPedestal");
+            pRing.transform.SetParent(droneStage.transform, false);
+            RectTransform prRt = pRing.AddComponent<RectTransform>();
+            prRt.anchorMin = new Vector2(0.5f, 0.5f); prRt.anchorMax = new Vector2(0.5f, 0.5f);
+            prRt.pivot = new Vector2(0.5f, 0.5f);
+            prRt.anchoredPosition = new Vector2(0, -15);
+            prRt.sizeDelta = new Vector2(240, 50);
+            Image prImg = pRing.AddComponent<Image>();
+            prImg.sprite = UISpriteService.CreateRoundedBox(240, 50, 25, new Color(0.1f, 0.45f, 0.85f, 0.4f), new Color(0.2f, 0.85f, 1f, 0.9f), 2);
+
+            // Hình ảnh Drone Trợ thủ (Art)
+            GameObject droneArt = new GameObject("DroneArt");
+            droneArt.transform.SetParent(droneStage.transform, false);
+            RectTransform daRt = droneArt.AddComponent<RectTransform>();
+            daRt.anchorMin = new Vector2(0.5f, 0.5f); daRt.anchorMax = new Vector2(0.5f, 0.5f);
+            daRt.pivot = new Vector2(0.5f, 0.5f);
+            daRt.anchoredPosition = new Vector2(0, 30);
+            daRt.sizeDelta = new Vector2(150, 150);
+            Image daImg = droneArt.AddComponent<Image>();
+            daImg.sprite = UISpriteService.GetPetDroneSprite();
+            daImg.preserveAspect = true;
+
+            // Huy hiệu tên Drone
+            CreateTextElement(droneStage, "DroneName", new Vector2(0.1f, 0.5f), new Vector2(0.9f, 0.5f), font, 18, FontStyle.Bold, new Color(1f, 0.85f, 0.25f), "🛸 CARROT DRONE MK-I")
+                .rectTransform.anchoredPosition = new Vector2(0, -50);
+
+            // Level & CP Pill
+            hub.companionLevelText = CreateTextElement(droneStage, "LvlPill", new Vector2(0.2f, 0.5f), new Vector2(0.8f, 0.5f), font, 13, FontStyle.Bold, new Color(0.7f, 0.95f, 1f), "CẤP ĐỘ 5  (EXP: 240/1000)");
+            hub.companionLevelText.rectTransform.anchoredPosition = new Vector2(0, -74);
+
+            hub.companionCpText = CreateTextElement(droneStage, "CpPill", new Vector2(0.2f, 0.5f), new Vector2(0.8f, 0.5f), font, 13, FontStyle.Bold, new Color(1f, 0.9f, 0.3f), "⚡ LỰC CHIẾN PET: 680 CP");
+            hub.companionCpText.rectTransform.anchoredPosition = new Vector2(0, -96);
+
+            // Thẻ Thông Số Chiến Đấu & Kỹ Năng Trợ Thủ
+            GameObject statsCard = new GameObject("CompanionStatsCard");
+            statsCard.transform.SetParent(compView.transform, false);
+            RectTransform scRt = statsCard.AddComponent<RectTransform>();
+            scRt.anchorMin = new Vector2(0.5f, 1f); scRt.anchorMax = new Vector2(0.5f, 1f);
+            scRt.pivot = new Vector2(0.5f, 1f);
+            scRt.anchoredPosition = new Vector2(0, -260);
+            scRt.sizeDelta = new Vector2(820, 175);
+
+            Image scBg = statsCard.AddComponent<Image>();
+            scBg.sprite = UISpriteService.CreateRoundedBox(820, 175, 16, new Color(0.09f, 0.12f, 0.19f, 0.95f), new Color(0.22f, 0.35f, 0.55f), 1);
+            scBg.color = Color.white;
+
+            CreateTextElement(statsCard, "Header", new Vector2(0.04f, 0.8f), new Vector2(0.96f, 0.96f), font, 14, FontStyle.Bold, new Color(1f, 0.85f, 0.2f), "🎯 CHỈ SỐ HỖ TRỢ CHIẾN ĐẤU:");
+
+            hub.companionStatsText = CreateTextElement(statsCard, "StatsBody", new Vector2(0.04f, 0.28f), new Vector2(0.96f, 0.8f), font, 13, FontStyle.Normal, Color.white, "Đang tải chỉ số...");
+            hub.companionStatsText.alignment = TextAnchor.UpperLeft;
+            hub.companionStatsText.lineSpacing = 1.3f;
+
+            // Dòng Nội Tại (Perks)
+            Text perksText = CreateTextElement(statsCard, "Perks", new Vector2(0.04f, 0.05f), new Vector2(0.96f, 0.28f), font, 12, FontStyle.Bold, new Color(0.35f, 0.95f, 0.55f), "🥕 +15% Sát Thương Chủ Nhân   |   🧲 Tự Động Hút Cà Rốt & Vàng (8m)   |   ⚡ -10% Hồi Chiêu");
+            perksText.alignment = TextAnchor.MiddleCenter;
+
+            // Thanh Hành Động: Nâng Cấp Trợ Thủ & Trạng Thái
+            GameObject actionsBar = new GameObject("CompanionActionsBar");
+            actionsBar.transform.SetParent(compView.transform, false);
+            RectTransform cabRt = actionsBar.AddComponent<RectTransform>();
+            cabRt.anchorMin = new Vector2(0.5f, 0); cabRt.anchorMax = new Vector2(0.5f, 0);
+            cabRt.pivot = new Vector2(0.5f, 0);
+            cabRt.anchoredPosition = new Vector2(0, 15);
+            cabRt.sizeDelta = new Vector2(820, 56);
+
+            // Nút Nâng Cấp Trợ Thủ
+            GameObject upBtnObj = new GameObject("UpgradeCompanionBtn");
+            upBtnObj.transform.SetParent(actionsBar.transform, false);
+            RectTransform ubRt = upBtnObj.AddComponent<RectTransform>();
+            ubRt.anchorMin = new Vector2(0, 0); ubRt.anchorMax = new Vector2(0.58f, 1);
+            ubRt.offsetMin = Vector2.zero; ubRt.offsetMax = Vector2.zero;
+
+            Image ubBg = upBtnObj.AddComponent<Image>();
+            ubBg.sprite = UISpriteService.CreateGradientBox(480, 56, 16, new Color(0.95f, 0.65f, 0.1f), new Color(0.85f, 0.45f, 0.05f), Color.white, 2);
+            hub.companionUpgradeButton = upBtnObj.AddComponent<Button>();
+            hub.companionUpgradeBtnText = CreateTextElement(upBtnObj, "Txt", Vector2.zero, Vector2.one, font, 14, FontStyle.Bold, Color.white, "🚀 NÂNG CẤP TRỢ THỦ\n(400💰 + 12⚙️)");
+
+            // Nút Trạng Thái Xuất Trận
+            GameObject statusObj = new GameObject("ActiveStatusPill");
+            statusObj.transform.SetParent(actionsBar.transform, false);
+            RectTransform stRt = statusObj.AddComponent<RectTransform>();
+            stRt.anchorMin = new Vector2(0.62f, 0); stRt.anchorMax = new Vector2(1, 1);
+            stRt.offsetMin = Vector2.zero; stRt.offsetMax = Vector2.zero;
+
+            Image stBg = statusObj.AddComponent<Image>();
+            stBg.sprite = UISpriteService.CreateRoundedBox(300, 56, 16, new Color(0.12f, 0.45f, 0.25f, 0.95f), new Color(0.3f, 0.9f, 0.45f), 1);
+            CreateTextElement(statusObj, "Txt", Vector2.zero, Vector2.one, font, 14, FontStyle.Bold, Color.white, "✅ ĐANG XUẤT TRẬN\n(ACTIVE COMPANION)");
+
+            // ================= 3. SUB-VIEW B: SỔ TAY QUÁI VẬT (BESTIARY VIEW) =================
+            GameObject bestView = new GameObject("View_Bestiary");
+            bestView.transform.SetParent(tab.transform, false);
+            RectTransform bvRt = bestView.AddComponent<RectTransform>();
+            bvRt.anchorMin = Vector2.zero; bvRt.anchorMax = Vector2.one;
+            bvRt.offsetMin = new Vector2(0, 0); bvRt.offsetMax = new Vector2(0, -60);
+            hub.bestiaryViewRoot = bestView;
+            bestView.SetActive(false);
 
             GameObject scrollObj = new GameObject("BestiaryScrollView");
-            scrollObj.transform.SetParent(tab.transform, false);
+            scrollObj.transform.SetParent(bestView.transform, false);
             RectTransform scrt = scrollObj.AddComponent<RectTransform>();
             scrt.anchorMin = new Vector2(0.5f, 0.5f); scrt.anchorMax = new Vector2(0.5f, 0.5f);
             scrt.pivot = new Vector2(0.5f, 0.5f);
-            scrt.anchoredPosition = new Vector2(0, -30);
-            scrt.sizeDelta = new Vector2(780, 480);
+            scrt.anchoredPosition = new Vector2(0, 0);
+            scrt.sizeDelta = new Vector2(820, 500);
 
             ScrollRect sr = scrollObj.AddComponent<ScrollRect>();
             sr.horizontal = false; sr.vertical = true;
@@ -1442,44 +2099,51 @@ namespace Apocarrot.UI
             card.transform.SetParent(overlay.transform, false);
             RectTransform crt = card.AddComponent<RectTransform>();
             crt.anchorMin = new Vector2(0.5f, 0.5f); crt.anchorMax = new Vector2(0.5f, 0.5f);
-            crt.sizeDelta = new Vector2(560, 480);
+            crt.sizeDelta = new Vector2(580, 500);
 
             Image cBg = card.AddComponent<Image>();
-            cBg.color = new Color(0.12f, 0.15f, 0.22f, 0.98f);
+            cBg.sprite = UISpriteService.CreateRoundedBox(580, 500, 24, new Color(0.10f, 0.13f, 0.21f, 0.98f), new Color(0.24f, 0.32f, 0.48f), 3);
+            cBg.color = Color.white;
 
-            hub.detailItemName = CreateTextElement(card, "Name", new Vector2(0, 0.85f), new Vector2(1, 0.98f), font, 22, FontStyle.Bold, Color.yellow, "Tên Vật Phẩm");
-            hub.detailItemRarity = CreateTextElement(card, "Rarity", new Vector2(0, 0.74f), new Vector2(1, 0.86f), font, 15, FontStyle.Bold, Color.cyan, "Độ Hiếm • Slot");
-            hub.detailItemStats = CreateTextElement(card, "Stats", new Vector2(0.08f, 0.44f), new Vector2(0.92f, 0.73f), font, 16, FontStyle.Normal, Color.white, "Chỉ số thưởng...");
-            hub.detailItemDesc = CreateTextElement(card, "Desc", new Vector2(0.08f, 0.26f), new Vector2(0.92f, 0.44f), font, 13, FontStyle.Italic, new Color(0.8f, 0.85f, 0.9f), "Mô tả...");
+            hub.detailItemName = CreateTextElement(card, "Name", new Vector2(0, 0.86f), new Vector2(1, 0.98f), font, 24, FontStyle.Bold, new Color(1f, 0.88f, 0.3f), "Tên Vật Phẩm");
+            hub.detailItemRarity = CreateTextElement(card, "Rarity", new Vector2(0, 0.76f), new Vector2(1, 0.87f), font, 15, FontStyle.Bold, new Color(0.7f, 0.4f, 1f), "Độ Hiếm • Slot");
+            hub.detailItemStats = CreateTextElement(card, "Stats", new Vector2(0.08f, 0.44f), new Vector2(0.92f, 0.74f), font, 16, FontStyle.Normal, Color.white, "Chỉ số thưởng...");
+            hub.detailItemDesc = CreateTextElement(card, "Desc", new Vector2(0.08f, 0.26f), new Vector2(0.92f, 0.44f), font, 13, FontStyle.Italic, new Color(0.8f, 0.85f, 0.95f), "Mô tả...");
 
             // Buttons: Equip, Upgrade, Salvage, Close
-            // Equip Button
+            // Equip Button (Cyan Gradient)
             GameObject eqBtn = new GameObject("EquipBtn");
             eqBtn.transform.SetParent(card.transform, false);
             RectTransform eqrt = eqBtn.AddComponent<RectTransform>();
             eqrt.anchorMin = new Vector2(0.06f, 0.12f); eqrt.anchorMax = new Vector2(0.34f, 0.24f);
             eqrt.offsetMin = Vector2.zero; eqrt.offsetMax = Vector2.zero;
-            eqBtn.AddComponent<Image>().color = new Color(0.18f, 0.65f, 0.35f);
+            Image eqImg = eqBtn.AddComponent<Image>();
+            eqImg.sprite = UISpriteService.GetActionButtonSprite("equip", 160, 48);
+            eqImg.color = Color.white;
             hub.detailEquipButton = eqBtn.AddComponent<Button>();
             hub.detailEquipButtonText = CreateTextElement(eqBtn, "Text", Vector2.zero, Vector2.one, font, 15, FontStyle.Bold, Color.white, "TRANG BỊ");
 
-            // Upgrade Button
+            // Upgrade Button (Gold Gradient)
             GameObject upBtn = new GameObject("UpgradeBtn");
             upBtn.transform.SetParent(card.transform, false);
             RectTransform uprt = upBtn.AddComponent<RectTransform>();
             uprt.anchorMin = new Vector2(0.36f, 0.12f); uprt.anchorMax = new Vector2(0.64f, 0.24f);
             uprt.offsetMin = Vector2.zero; uprt.offsetMax = Vector2.zero;
-            upBtn.AddComponent<Image>().color = new Color(0.18f, 0.50f, 0.85f);
+            Image upImg = upBtn.AddComponent<Image>();
+            upImg.sprite = UISpriteService.GetActionButtonSprite("upgrade", 160, 48);
+            upImg.color = Color.white;
             hub.detailUpgradeButton = upBtn.AddComponent<Button>();
             hub.detailUpgradeButtonText = CreateTextElement(upBtn, "Text", Vector2.zero, Vector2.one, font, 13, FontStyle.Bold, Color.white, "NÂNG CẤP");
 
-            // Salvage Button
+            // Salvage Button (Grey Gradient)
             GameObject svBtn = new GameObject("SalvageBtn");
             svBtn.transform.SetParent(card.transform, false);
             RectTransform svrt = svBtn.AddComponent<RectTransform>();
             svrt.anchorMin = new Vector2(0.66f, 0.12f); svrt.anchorMax = new Vector2(0.94f, 0.24f);
             svrt.offsetMin = Vector2.zero; svrt.offsetMax = Vector2.zero;
-            svBtn.AddComponent<Image>().color = new Color(0.85f, 0.32f, 0.18f);
+            Image svImg = svBtn.AddComponent<Image>();
+            svImg.sprite = UISpriteService.GetActionButtonSprite("salvage", 160, 48);
+            svImg.color = Color.white;
             hub.detailSalvageButton = svBtn.AddComponent<Button>();
             CreateTextElement(svBtn, "Text", Vector2.zero, Vector2.one, font, 14, FontStyle.Bold, Color.white, "PHÂN GIẢI 🔨");
 
@@ -1489,7 +2153,9 @@ namespace Apocarrot.UI
             RectTransform clrt = clBtn.AddComponent<RectTransform>();
             clrt.anchorMin = new Vector2(0.32f, 0.02f); clrt.anchorMax = new Vector2(0.68f, 0.10f);
             clrt.offsetMin = Vector2.zero; clrt.offsetMax = Vector2.zero;
-            clBtn.AddComponent<Image>().color = new Color(0.35f, 0.38f, 0.45f);
+            Image clImg = clBtn.AddComponent<Image>();
+            clImg.sprite = UISpriteService.CreateRoundedBox(180, 40, 12, new Color(0.2f, 0.24f, 0.35f), Color.clear, 0);
+            clImg.color = Color.white;
             hub.detailCloseButton = clBtn.AddComponent<Button>();
             CreateTextElement(clBtn, "Text", Vector2.zero, Vector2.one, font, 14, FontStyle.Bold, Color.white, "ĐÓNG");
 
@@ -1512,25 +2178,55 @@ namespace Apocarrot.UI
             card.transform.SetParent(overlay.transform, false);
             RectTransform crt = card.AddComponent<RectTransform>();
             crt.anchorMin = new Vector2(0.5f, 0.5f); crt.anchorMax = new Vector2(0.5f, 0.5f);
-            crt.sizeDelta = new Vector2(580, 420);
+            crt.sizeDelta = new Vector2(620, 480);
 
             Image cBg = card.AddComponent<Image>();
-            cBg.color = new Color(0.14f, 0.16f, 0.25f, 0.98f);
+            cBg.sprite = UISpriteService.CreateRoundedBox(620, 480, 24, new Color(0.12f, 0.15f, 0.24f, 0.98f), new Color(0.85f, 0.4f, 1f), 3);
+            cBg.color = Color.white;
 
-            hub.rewardChestTitle = CreateTextElement(card, "Title", new Vector2(0, 0.82f), new Vector2(1, 0.98f), font, 22, FontStyle.Bold, Color.yellow, "👑 RƯƠNG PHẦN THƯỞNG");
-            hub.rewardItemName = CreateTextElement(card, "Name", new Vector2(0, 0.65f), new Vector2(1, 0.82f), font, 24, FontStyle.Bold, Color.green, "Kiếm Cà Rốt Hoàng Gia");
-            hub.rewardItemRarity = CreateTextElement(card, "Rarity", new Vector2(0, 0.52f), new Vector2(1, 0.65f), font, 16, FontStyle.Bold, Color.cyan, "Sử Thi • Cận Chiến");
-            hub.rewardItemStats = CreateTextElement(card, "Stats", new Vector2(0.05f, 0.34f), new Vector2(0.95f, 0.52f), font, 17, FontStyle.Normal, Color.white, "⚔️ +50 Sát Thương");
-            hub.rewardExtraText = CreateTextElement(card, "Extra", new Vector2(0.05f, 0.22f), new Vector2(0.95f, 0.34f), font, 14, FontStyle.Normal, new Color(1f, 0.85f, 0.4f), "+120 Vàng | +5 Scrap");
+            hub.rewardChestTitle = CreateTextElement(card, "Title", new Vector2(0, 0.86f), new Vector2(1, 0.98f), font, 24, FontStyle.Bold, new Color(1f, 0.88f, 0.3f), "🎉 YOU GOT! 🎁");
+
+            // Hình Ảnh Rương Mở Nắp Hoàng Gia (Open Royal Purple Chest)
+            GameObject chestImgObj = new GameObject("ChestOpenImage");
+            chestImgObj.transform.SetParent(card.transform, false);
+            RectTransform cirt = chestImgObj.AddComponent<RectTransform>();
+            cirt.anchorMin = new Vector2(0.5f, 0.5f); cirt.anchorMax = new Vector2(0.5f, 0.5f);
+            cirt.pivot = new Vector2(0.5f, 0.5f);
+            cirt.anchoredPosition = new Vector2(-150, 15);
+            cirt.sizeDelta = new Vector2(180, 180);
+            Image cimg = chestImgObj.AddComponent<Image>();
+            cimg.sprite = UISpriteService.GetChestPurpleSprite();
+            cimg.color = Color.white;
+
+            // Khung Chi Tiết Vật Phẩm Bên Phải Rương
+            GameObject rwdDetails = new GameObject("Reward_Details_Panel");
+            rwdDetails.transform.SetParent(card.transform, false);
+            RectTransform rdrt = rwdDetails.AddComponent<RectTransform>();
+            rdrt.anchorMin = new Vector2(0.5f, 0.22f); rdrt.anchorMax = new Vector2(0.95f, 0.84f);
+            rdrt.offsetMin = Vector2.zero; rdrt.offsetMax = Vector2.zero;
+
+            Image rdBg = rwdDetails.AddComponent<Image>();
+            rdBg.sprite = UISpriteService.CreateRoundedBox(270, 240, 16, new Color(0.08f, 0.10f, 0.16f, 0.95f), new Color(0.35f, 0.42f, 0.65f), 2);
+            rdBg.color = Color.white;
+
+            hub.rewardItemName = CreateTextElement(rwdDetails, "Name", new Vector2(0.05f, 0.70f), new Vector2(0.95f, 0.95f), font, 18, FontStyle.Bold, Color.yellow, "Carrot Hammer");
+            hub.rewardItemRarity = CreateTextElement(rwdDetails, "Rarity", new Vector2(0.05f, 0.48f), new Vector2(0.95f, 0.70f), font, 14, FontStyle.Bold, new Color(0.75f, 0.35f, 1f), "Sử Thi (Epic)");
+            hub.rewardItemStats = CreateTextElement(rwdDetails, "Stats", new Vector2(0.05f, 0.25f), new Vector2(0.95f, 0.48f), font, 14, FontStyle.Normal, Color.white, "⚔️ +50 Sát Thương");
+            hub.rewardExtraText = CreateTextElement(rwdDetails, "Extra", new Vector2(0.05f, 0.05f), new Vector2(0.95f, 0.25f), font, 13, FontStyle.Normal, new Color(0.3f, 0.95f, 0.6f), "+800 💰 | +50 💎");
 
             GameObject btn = new GameObject("ConfirmBtn");
             btn.transform.SetParent(card.transform, false);
             RectTransform brt = btn.AddComponent<RectTransform>();
-            brt.anchorMin = new Vector2(0.28f, 0.06f); brt.anchorMax = new Vector2(0.72f, 0.18f);
-            brt.offsetMin = Vector2.zero; brt.offsetMax = Vector2.zero;
-            btn.AddComponent<Image>().color = new Color(0.18f, 0.75f, 0.35f);
+            brt.anchorMin = new Vector2(0.5f, 0); brt.anchorMax = new Vector2(0.5f, 0);
+            brt.pivot = new Vector2(0.5f, 0);
+            brt.anchoredPosition = new Vector2(0, 20);
+            brt.sizeDelta = new Vector2(240, 52);
+
+            Image bImg = btn.AddComponent<Image>();
+            bImg.sprite = UISpriteService.GetActionButtonSprite("confirm", 240, 52);
+            bImg.color = Color.white;
             hub.rewardConfirmButton = btn.AddComponent<Button>();
-            CreateTextElement(btn, "Text", Vector2.zero, Vector2.one, font, 18, FontStyle.Bold, Color.white, "TUYỆT VỜI / NHẬN ĐỒ");
+            CreateTextElement(btn, "Text", Vector2.zero, Vector2.one, font, 18, FontStyle.Bold, Color.white, "CONFIRM");
 
             overlay.SetActive(false);
             return overlay;

@@ -137,6 +137,7 @@ namespace Apocarrot.Gameplay
             Apocarrot.Cameras.TopDownFollowCamera.Shake(0.15f, 0.25f);
 
             // Hiệu ứng chớp đỏ khi bị đánh trúng
+            GetComponentInChildren<Apocarrot.Visuals.SpriteBillboard2D>()?.FlashDamage(new Color(1f, 0.35f, 0.35f), 0.15f);
             StartCoroutine(FlashRedRoutine());
 
             if (currentHealth <= 0)

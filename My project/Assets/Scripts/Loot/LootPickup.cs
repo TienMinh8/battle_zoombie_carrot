@@ -260,13 +260,8 @@ namespace Apocarrot.Loot
             sc.isTrigger = true;
             sc.radius = 0.55f;
 
-            GameObject coinVisual = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            coinVisual.name = "Coin_Mesh";
-            coinVisual.transform.SetParent(obj.transform, false);
-            coinVisual.transform.localScale = new Vector3(0.4f, 0.08f, 0.4f);
-            coinVisual.transform.localRotation = Quaternion.Euler(60f, 0, 0);
-            Destroy(coinVisual.GetComponent<Collider>());
-            coinVisual.GetComponent<Renderer>().material.color = new Color(1.0f, 0.84f, 0.1f);
+            // Visual 2.5D Sprite Đồng Vàng Sáng Lấp Lánh
+            Apocarrot.Visuals.SpriteCharacterFactory.AttachLootSprite(obj, Apocarrot.Visuals.SpriteCharacterFactory.GenerateCoinSprite(), 0.75f);
 
             return obj;
         }
@@ -284,12 +279,8 @@ namespace Apocarrot.Loot
             sc.isTrigger = true;
             sc.radius = 0.6f;
 
-            GameObject miniCarrot = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            miniCarrot.name = "Snack_Body";
-            miniCarrot.transform.SetParent(obj.transform, false);
-            miniCarrot.transform.localScale = new Vector3(0.3f, 0.4f, 0.3f);
-            Destroy(miniCarrot.GetComponent<Collider>());
-            miniCarrot.GetComponent<Renderer>().material.color = new Color(0.2f, 0.95f, 0.35f);
+            // Visual 2.5D Sprite Trái Tim Hồi Máu
+            Apocarrot.Visuals.SpriteCharacterFactory.AttachLootSprite(obj, Apocarrot.Visuals.SpriteCharacterFactory.GenerateHeartSprite(), 0.75f);
 
             return obj;
         }
@@ -307,18 +298,16 @@ namespace Apocarrot.Loot
             sc.isTrigger = true;
             sc.radius = 0.75f;
 
-            GameObject boxVisual = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            boxVisual.name = "Crate_Body";
-            boxVisual.transform.SetParent(obj.transform, false);
-            boxVisual.transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
-            Destroy(boxVisual.GetComponent<Collider>());
-            boxVisual.GetComponent<Renderer>().material.color = weapon.ItemColor;
+            // Visual 2.5D Sprite Vũ Khí Rơi
+            Sprite wpnSprite = WeaponSpriteService.GetWeaponItemSprite(weapon);
+            if (wpnSprite == null) wpnSprite = Apocarrot.Visuals.SpriteCharacterFactory.GenerateCoinSprite();
+            Apocarrot.Visuals.SpriteCharacterFactory.AttachLootSprite(obj, wpnSprite, 0.85f);
 
             return obj;
         }
 
         /// <summary>
-        /// Tạo Rương Rơi Trang Bị phát sáng 3D theo Phẩm chất (Survivor.io style).
+        /// Tạo Rương Rơi Trang Bị phát sáng 2.5D theo Phẩm chất (Survivor.io style).
         /// Khi Thỏ nhặt sẽ được đưa TRỰC TIẾP vào Túi Đồ Balo!
         /// </summary>
         public static GameObject CreateEquipmentPickup(Vector3 position, EquipmentItem equipment)
@@ -334,33 +323,10 @@ namespace Apocarrot.Loot
             sc.isTrigger = true;
             sc.radius = 0.85f;
 
-            Color rarityCol = equipment.GetRarityColor();
-
-            // Rương trang bị chính
-            GameObject crateBody = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            crateBody.name = "Crate_Body";
-            crateBody.transform.SetParent(obj.transform, false);
-            crateBody.transform.localScale = new Vector3(0.65f, 0.65f, 0.65f);
-            Destroy(crateBody.GetComponent<Collider>());
-            crateBody.GetComponent<Renderer>().material.color = rarityCol;
-
-            // Nắp rương viền trắng phát sáng
-            GameObject trim = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            trim.name = "Crate_Trim";
-            trim.transform.SetParent(obj.transform, false);
-            trim.transform.localPosition = new Vector3(0, 0.35f, 0);
-            trim.transform.localScale = new Vector3(0.72f, 0.14f, 0.72f);
-            Destroy(trim.GetComponent<Collider>());
-            trim.GetComponent<Renderer>().material.color = Color.white;
-
-            // Cột sáng/Viên ngọc biểu tượng ở trên đỉnh rương
-            GameObject gem = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            gem.name = "Top_Gem";
-            gem.transform.SetParent(obj.transform, false);
-            gem.transform.localPosition = new Vector3(0, 0.62f, 0);
-            gem.transform.localScale = new Vector3(0.28f, 0.32f, 0.28f);
-            Destroy(gem.GetComponent<Collider>());
-            gem.GetComponent<Renderer>().material.color = rarityCol;
+            // Visual 2.5D Sprite Trang Bị / Rương
+            Sprite eqSprite = WeaponSpriteService.GetEquipmentSprite(equipment);
+            if (eqSprite == null) eqSprite = Apocarrot.Visuals.SpriteCharacterFactory.GenerateCoinSprite();
+            Apocarrot.Visuals.SpriteCharacterFactory.AttachLootSprite(obj, eqSprite, 0.9f);
 
             return obj;
         }
