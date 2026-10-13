@@ -127,3 +127,10 @@ Dựa trên tài liệu mở rộng `APOCARROT_Gameplay_Expansion_Design.md`, tr
    - Thông tin Chiến binh: Cấp Thỏ, Tiến trình thanh kinh nghiệm XP, Thống kê tổng số màn hoàn thành, quái đã diệt, boss đã hạ.
    - Danh sách Thành Tựu (Achievements): Cho phép người chơi nhận thưởng Vàng, Gems, Scrap, XP ngay khi hoàn thành chỉ tiêu.
 
+---
+
+## 5. KHẮC PHỤC LỖI TRƯỚC KHI VÀO PLAYMODE (COMPILER VERIFICATION)
+- **Lỗi:** Unity Editor hiển thị thông báo `All compiler errors have to be fixed before you can enter playmode!` do một số thuộc tính bonus chỉ số trong `EquipmentItem.cs` (`GetTotalAttackBonus`, `GetTotalHealthBonus`, `AttackBonus`, `HealthBonus`, `ArmorBonus`, `AttackSpeedBonus`, `MoveSpeedBonus`) và alias `AudioManager.PlayCoinPickup()` chưa được định nghĩa đầy đủ khi gọi từ `HomeHubUI.cs`.
+- **Khắc phục:** Đã bổ sung toàn bộ thuộc tính getter và helper method tương thích 100% vào `EquipmentItem.cs` và `AudioManager.cs`.
+- **Kết quả:** Unity 6 đã recompile toàn bộ Script Assemblies thành công (0 compiler errors, `Assembly-CSharp.dll` 247 KB được sinh hoàn tất). Trạng thái PlayMode sẵn sàng 100%.
+
